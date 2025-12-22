@@ -79,7 +79,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="agent@landora.com"
+                placeholder="your@email.com"
                 value={form.email}
                 onChange={(e) => handleChange("email", e.target.value)}
                 className={getFieldError(validationErrors, "email") ? "border-red-500" : ""}
@@ -96,7 +96,7 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 value={form.password}
                 onChange={(e) => handleChange("password", e.target.value)}
                 className={getFieldError(validationErrors, "password") ? "border-red-500" : ""}

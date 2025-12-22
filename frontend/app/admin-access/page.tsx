@@ -28,7 +28,7 @@ export default function AdminAccessPage() {
               type="email"
               required
               autoComplete="username"
-              placeholder="admin@domain.com"
+              placeholder="Enter admin email"
               className="bg-white text-[#111111]"
             />
           </div>
@@ -41,7 +41,7 @@ export default function AdminAccessPage() {
                 type={show ? "text" : "password"}
                 required
                 autoComplete="current-password"
-                placeholder="••••••••"
+                placeholder="Enter admin password"
                 className="bg-white text-[#111111]"
               />
               <Button

@@ -87,7 +87,7 @@ export default function RegisterPage() {
                 <Label htmlFor="name">Full name</Label>
                 <Input
                   id="name"
-                  placeholder="Zain Malik"
+                  placeholder="Enter your full name"
                   value={form.name}
                   onChange={(e) => handleChange("name", e.target.value)}
                   className={getFieldError(validationErrors, "name") ? "border-red-500" : ""}
@@ -104,7 +104,7 @@ export default function RegisterPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="team@landora.com"
+                  placeholder="your@email.com"
                   value={form.email}
                   onChange={(e) => handleChange("email", e.target.value)}
                   className={getFieldError(validationErrors, "email") ? "border-red-500" : ""}
@@ -139,7 +139,7 @@ export default function RegisterPage() {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder="Create a strong password"
                   value={form.password}
                   onChange={(e) => handleChange("password", e.target.value)}
                   className={getFieldError(validationErrors, "password") ? "border-red-500" : ""}

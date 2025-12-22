@@ -98,7 +98,7 @@ export default function AgentCustomersPage() {
                 <Label htmlFor="name">Name *</Label>
                 <Input
                   id="name"
-                  placeholder="John Doe"
+                  placeholder="Enter customer name"
                   value={form.name}
                   onChange={(e) => handleChange("name", e.target.value)}
                   required
@@ -112,7 +112,7 @@ export default function AgentCustomersPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="john@example.com"
+                  placeholder="customer@email.com"
                   value={form.email}
                   onChange={(e) => handleChange("email", e.target.value)}
                   required
