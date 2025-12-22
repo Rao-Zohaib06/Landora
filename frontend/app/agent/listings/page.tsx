@@ -1,48 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AnimatedSection } from "@/components/ui/animated-section";
 import { ListingCard } from "@/components/agent/listing-card";
-import { Plus, Search, Filter } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import Link from "next/link";
-
-const mockListings = [
-  {
-    id: "LST-001",
-    title: "Premium 1 Kanal Plot - DHA Phase 5",
-    location: "DHA Phase 5, Lahore",
-    price: "PKR 32M",
-    area: "1 Kanal",
-    status: "approved" as const,
-  },
-  {
-    id: "LST-002",
-    title: "10 Marla Corner Plot - Bahria Town",
-    location: "Bahria Town, Lahore",
-    price: "PKR 18M",
-    area: "10 Marla",
-    status: "pending" as const,
-  },
-  {
-    id: "LST-003",
-    title: "Commercial Shop - Main Boulevard",
-    location: "Main Boulevard, Lahore",
-    price: "PKR 12M",
-    area: "500 sqft",
-    status: "approved" as const,
-  },
-];
+import { useListings } from "@/hooks/use-listings";
 
 export default function ListingsPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  
+  const { listings, loading } = useListings({ 
+    myListings: true // Only fetch agent's own listings
+  });
 
-  const filteredListings = mockListings.filter(
-    (listing) =>
-      listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      listing.location.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredListings = listings.filter(
+    (listing) => {
+      const matchesSearch = 
+        listing.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        listing.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        listing.location?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesStatus = statusFilter === "all" || listing.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    }
   );
 
   return (
@@ -77,7 +63,11 @@ export default function ListingsPage() {
                   className="pl-10"
                 />
               </div>
-              <select className="px-4 py-2 border border-[#E7EAEF] rounded-xl bg-white text-sm">
+              <select 
+                className="px-4 py-2 border border-[#E7EAEF] rounded-xl bg-white text-sm"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
                 <option value="approved">Approved</option>
@@ -89,10 +79,41 @@ export default function ListingsPage() {
       </AnimatedSection>
 
       {/* Listings Grid */}
-      <AnimatedSection variant="slideUp" className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredListings.map((listing) => (
-          <ListingCard key={listing.id} {...listing} />
-        ))}
+      <AnimatedSection variant="slideUp">
+        {loading ? (
+          <div className="text-center py-12 text-gray-500">Loading listings...</div>
+        ) : filteredListings.length === 0 ? (
+          <Card className="bg-white border-[#E7EAEF]">
+            <CardContent className="p-12 text-center">
+              <p className="text-gray-500 mb-4">
+                {searchQuery || statusFilter !== "all" 
+                  ? "No listings match your filters" 
+                  : "You haven't created any listings yet"
+                }
+              </p>
+              <Button className="bg-[#6139DB] hover:bg-[#6139DB]/90" asChild>
+                <Link href="/agent/listings/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Your First Listing
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredListings.map((listing) => (
+              <ListingCard 
+                key={listing._id}
+                id={listing._id}
+                title={listing.title || 'Untitled'}
+                location={listing.location || 'N/A'}
+                price={`PKR ${(listing.price / 1000000).toFixed(1)}M`}
+                area={`${listing.area || 'N/A'}`}
+                status={listing.status}
+              />
+            ))}
+          </div>
+        )}
       </AnimatedSection>
     </div>
   );

@@ -33,8 +33,18 @@ const userSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['active', 'inactive', 'pending', 'suspended'],
+      enum: ['active', 'inactive', 'pending', 'suspended', 'rejected'],
       default: 'pending',
+    },
+    approvedByAdmin: {
+      type: Boolean,
+      default: false,
+    },
+    approvedAt: {
+      type: Date,
+    },
+    rejectedAt: {
+      type: Date,
     },
     profile: {
       cnic: String,
@@ -104,8 +114,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Indexes
-userSchema.index({ email: 1 });
+// Indexes (email index is created automatically by unique: true)
 userSchema.index({ role: 1 });
 userSchema.index({ status: 1 });
 

@@ -1,23 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AnimatedSection } from "@/components/ui/animated-section";
-import { User, Mail, Phone, MapPin, Upload, Save, Lock } from "lucide-react";
+import { User, Mail, Phone, MapPin, Upload, Save, Lock, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
 
 export default function AgentProfilePage() {
+  const { user, refreshUser } = useAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [updatingPassword, setUpdatingPassword] = useState(false);
+
   const [profile, setProfile] = useState({
-    name: "Sara Malik",
-    email: "sara@landora.com",
-    phone: "+92 300 1234567",
-    cnic: "35202-1234567-1",
-    agency: "Landora Real Estate",
-    address: "Lahore, Pakistan",
-    territory: "Lahore",
-    licenseNumber: "REA-2024-1234",
+    name: "",
+    email: "",
+    phone: "",
+    cnic: "",
+    agency: "",
+    address: "",
+    territory: "",
+    licenseNumber: "",
   });
 
   const [passwordForm, setPasswordForm] = useState({
@@ -25,6 +34,102 @@ export default function AgentProfilePage() {
     newPassword: "",
     confirmPassword: "",
   });
+
+  // Load user profile data
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        cnic: user.profile?.cnic || "",
+        agency: user.agentProfile?.agencyName || "",
+        address: user.profile?.address || "",
+        territory: user.agentProfile?.territory || "",
+        licenseNumber: user.agentProfile?.licenseNumber || "",
+      });
+    }
+  }, [user]);
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    try {
+      await api.put("/api/users/me", {
+        name: profile.name,
+        phone: profile.phone,
+        profile: {
+          cnic: profile.cnic,
+          address: profile.address,
+        },
+        agentProfile: {
+          agencyName: profile.agency,
+          territory: profile.territory,
+          licenseNumber: profile.licenseNumber,
+        },
+      });
+
+      await refreshUser();
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to update profile",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "New passwords do not match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUpdatingPassword(true);
+    try {
+      await api.put("/api/users/change-password", {
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+
+      toast({
+        title: "Success",
+        description: "Password updated successfully",
+      });
+
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to change password",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8">
@@ -127,9 +232,22 @@ export default function AgentProfilePage() {
                 </div>
               </div>
 
-              <Button className="bg-[#6139DB] hover:bg-[#6139DB]/90">
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
+              <Button
+                onClick={handleSaveProfile}
+                disabled={saving}
+                className="bg-[#6139DB] hover:bg-[#6139DB]/90"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
               </Button>
             </CardContent>
           </Card>
@@ -179,8 +297,20 @@ export default function AgentProfilePage() {
                   }
                 />
               </div>
-              <Button variant="outline" className="w-full">
-                Update Password
+              <Button
+                onClick={handleChangePassword}
+                disabled={updatingPassword}
+                variant="outline"
+                className="w-full"
+              >
+                {updatingPassword ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  "Update Password"
+                )}
               </Button>
             </CardContent>
           </Card>

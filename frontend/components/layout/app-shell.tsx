@@ -13,7 +13,8 @@ export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   
   // Don't render public navbar/footer on admin or agent pages
-  const isAdminRoute = pathname?.startsWith("/admin");
+  // NOTE: `/admin-access` is a secret entry route and must not show public navbar/footer.
+  const isAdminRoute = pathname?.startsWith("/admin") || pathname === "/admin-access";
   const isAgentRoute = pathname?.startsWith("/agent");
   const isPublicRoute = !isAdminRoute && !isAgentRoute;
 

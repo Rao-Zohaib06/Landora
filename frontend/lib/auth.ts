@@ -9,6 +9,8 @@ export interface User {
   phone?: string;
   role: "admin" | "agent" | "user";
   status: string;
+  approvedByAdmin?: boolean;
+  approvedAt?: string;
   profile?: {
     cnic?: string;
     address?: string;

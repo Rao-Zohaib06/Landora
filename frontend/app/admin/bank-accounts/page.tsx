@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,83 +14,74 @@ import {
 import { AnimatedSection } from "@/components/ui/animated-section";
 import { Plus, Upload, Banknote, FileUp } from "lucide-react";
 import { StatCard } from "@/components/admin/stat-card";
+import { bankAccountAPI } from "@/lib/api";
 
 interface BankAccount {
-  id: string;
+  _id: string;
   bankName: string;
   accountNumber: string;
   accountType: string;
-  balance: string;
-  lastTransaction: string;
+  branch?: string;
+  balance: number;
+  isActive: boolean;
+  transactions: Transaction[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface Transaction {
-  id: string;
+  _id: string;
   date: string;
   description: string;
-  amount: string;
+  amount: number;
   type: "credit" | "debit";
-  status: "matched" | "unmatched";
+  matched: boolean;
+  referenceNumber?: string;
 }
 
-const mockAccounts: BankAccount[] = [
-  {
-    id: "BA-001",
-    bankName: "Meezan Bank",
-    accountNumber: "PK12MEZN1234567890",
-    accountType: "Current",
-    balance: "PKR 45M",
-    lastTransaction: "2024-01-15",
-  },
-  {
-    id: "BA-002",
-    bankName: "HBL",
-    accountNumber: "PK12HBL0987654321",
-    accountType: "Savings",
-    balance: "PKR 28M",
-    lastTransaction: "2024-01-14",
-  },
-  {
-    id: "BA-003",
-    bankName: "UBL",
-    accountNumber: "PK12UBL1122334455",
-    accountType: "Current",
-    balance: "PKR 52M",
-    lastTransaction: "2024-01-15",
-  },
-];
-
-const mockTransactions: Transaction[] = [
-  {
-    id: "TXN-001",
-    date: "2024-01-15",
-    description: "Buyer Payment - PL-202",
-    amount: "PKR 500K",
-    type: "credit",
-    status: "matched",
-  },
-  {
-    id: "TXN-002",
-    date: "2024-01-14",
-    description: "Seller Payment",
-    amount: "PKR 2M",
-    type: "debit",
-    status: "matched",
-  },
-  {
-    id: "TXN-003",
-    date: "2024-01-13",
-    description: "Unidentified Transaction",
-    amount: "PKR 150K",
-    type: "credit",
-    status: "unmatched",
-  },
-];
-
 export default function BankAccountsPage() {
-  const totalBalance = "PKR 125M";
-  const matchedTransactions = mockTransactions.filter((t) => t.status === "matched").length;
-  const unmatchedTransactions = mockTransactions.filter((t) => t.status === "unmatched").length;
+  const [accounts, setAccounts] = useState<BankAccount[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalBalance: 0,
+    matchedTransactions: 0,
+    unmatchedTransactions: 0,
+  });
+
+  useEffect(() => {
+    fetchBankAccounts();
+  }, []);
+
+  const fetchBankAccounts = async () => {
+    try {
+      setLoading(true);
+      const response = await bankAccountAPI.getAll();
+      const data = response.data;
+      
+      setAccounts(data.accounts || []);
+      setStats(data.stats || {
+        totalBalance: 0,
+        matchedTransactions: 0,
+        unmatchedTransactions: 0,
+      });
+    } catch (error) {
+      console.error("Failed to fetch bank accounts:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get all transactions from all accounts
+  const allTransactions = accounts.flatMap(account => 
+    account.transactions.map(txn => ({
+      ...txn,
+      accountName: account.bankName,
+      accountNumber: account.accountNumber,
+    }))
+  ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  // Get recent transactions (last 10)
+  const recentTransactions = allTransactions.slice(0, 10);
 
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8">
@@ -117,19 +109,19 @@ export default function BankAccountsPage() {
       <AnimatedSection variant="slideUp" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           title="Total Balance"
-          value={totalBalance}
+          value={`PKR ${(stats.totalBalance / 1000000).toFixed(2)}M`}
           icon={Banknote}
           iconBg="bg-green-100"
         />
         <StatCard
           title="Matched Transactions"
-          value={matchedTransactions.toString()}
+          value={stats.matchedTransactions.toString()}
           icon={FileUp}
           iconBg="bg-blue-100"
         />
         <StatCard
           title="Unmatched Transactions"
-          value={unmatchedTransactions.toString()}
+          value={stats.unmatchedTransactions.toString()}
           icon={FileUp}
           iconBg="bg-orange-100"
         />
@@ -142,34 +134,52 @@ export default function BankAccountsPage() {
             <CardTitle className="text-lg font-semibold text-[#111111]">Bank Accounts</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-              {mockAccounts.map((account) => (
-                <Card key={account.id} className="bg-gradient-to-br from-[#6139DB] to-[#6139DB]/80 border-none">
-                  <CardContent className="p-6 text-white">
-                    <div className="space-y-4">
-                      <div>
-                        <p className="text-sm opacity-90 mb-1">{account.bankName}</p>
-                        <p className="text-lg font-semibold">{account.accountType}</p>
+            {loading ? (
+              <div className="text-center py-8">Loading bank accounts...</div>
+            ) : accounts.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No bank accounts found. Add your first account to get started.
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+                {accounts.map((account) => (
+                  <Card key={account._id} className="bg-gradient-to-br from-[#6139DB] to-[#6139DB]/80 border-none">
+                    <CardContent className="p-6 text-white">
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-sm opacity-90 mb-1">{account.bankName}</p>
+                          <p className="text-lg font-semibold">{account.accountType}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs opacity-75 mb-1">Account Number</p>
+                          <p className="font-mono text-sm">{account.accountNumber}</p>
+                        </div>
+                        {account.branch && (
+                          <div>
+                            <p className="text-xs opacity-75 mb-1">Branch</p>
+                            <p className="text-sm">{account.branch}</p>
+                          </div>
+                        )}
+                        <div className="pt-4 border-t border-white/20">
+                          <p className="text-xs opacity-75 mb-1">Balance</p>
+                          <p className="text-2xl font-bold">
+                            PKR {(account.balance / 1000000).toFixed(2)}M
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs opacity-75">
+                            Status: {account.isActive ? "Active" : "Inactive"}
+                          </p>
+                        </div>
+                        <Button variant="secondary" size="sm" className="w-full mt-4">
+                          View Ledger ({account.transactions.length} txns)
+                        </Button>
                       </div>
-                      <div>
-                        <p className="text-xs opacity-75 mb-1">Account Number</p>
-                        <p className="font-mono text-sm">{account.accountNumber}</p>
-                      </div>
-                      <div className="pt-4 border-t border-white/20">
-                        <p className="text-xs opacity-75 mb-1">Balance</p>
-                        <p className="text-2xl font-bold">{account.balance}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs opacity-75">Last Transaction: {account.lastTransaction}</p>
-                      </div>
-                      <Button variant="secondary" size="sm" className="w-full mt-4">
-                        View Ledger
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </AnimatedSection>
@@ -186,6 +196,7 @@ export default function BankAccountsPage() {
                 <TableRow>
                   <TableHead>Transaction ID</TableHead>
                   <TableHead>Date</TableHead>
+                  <TableHead>Account</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead>Type</TableHead>
@@ -194,49 +205,78 @@ export default function BankAccountsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockTransactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell className="font-medium">{transaction.id}</TableCell>
-                    <TableCell>{transaction.date}</TableCell>
-                    <TableCell>{transaction.description}</TableCell>
-                    <TableCell
-                      className={`text-right font-semibold ${
-                        transaction.type === "credit" ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {transaction.type === "credit" ? "+" : "-"} {transaction.amount}
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                          transaction.type === "credit"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {transaction.type}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {transaction.status === "matched" ? (
-                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-green-100 text-green-800">
-                          Matched
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-orange-100 text-orange-800">
-                          Unmatched
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {transaction.status === "unmatched" && (
-                        <Button variant="ghost" size="sm">
-                          Match
-                        </Button>
-                      )}
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8">
+                      Loading transactions...
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : recentTransactions.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                      No transactions found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  recentTransactions.map((transaction: any) => (
+                    <TableRow key={transaction._id}>
+                      <TableCell className="font-medium">
+                        #{transaction._id.slice(-6)}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(transaction.date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <p className="font-medium">{transaction.accountName}</p>
+                          <p className="text-gray-500 text-xs">{transaction.accountNumber}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>{transaction.description || 'N/A'}</TableCell>
+                      <TableCell
+                        className={`text-right font-semibold ${
+                          transaction.type === "credit" ? "text-green-600" : "text-red-600"
+                        }`}
+                      >
+                        {transaction.type === "credit" ? "+" : "-"} PKR{" "}
+                        {transaction.amount.toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={`px-2 py-1 rounded-lg text-xs font-medium ${
+                            transaction.type === "credit"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {transaction.type}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {transaction.matched ? (
+                          <span className="px-2 py-1 rounded-lg text-xs font-medium bg-green-100 text-green-800">
+                            Matched
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 rounded-lg text-xs font-medium bg-orange-100 text-orange-800">
+                            Unmatched
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {!transaction.matched && (
+                          <Button variant="ghost" size="sm">
+                            Match
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>

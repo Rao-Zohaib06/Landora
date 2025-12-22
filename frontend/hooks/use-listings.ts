@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { listingAPI } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface Listing {
   _id: string;
@@ -48,7 +49,9 @@ export function useListings(params?: {
   city?: string;
   page?: number;
   limit?: number;
+  myListings?: boolean;
 }) {
+  const { user } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +66,16 @@ export function useListings(params?: {
     const fetchListings = async () => {
       try {
         setLoading(true);
-        const response = await listingAPI.getAll(params);
+        // Create a copy of params without myListings
+        const apiParams = { ...params };
+        delete apiParams.myListings;
+        
+        // If myListings is true and user exists, add agentId
+        if (params?.myListings && user?.id) {
+          apiParams.agentId = user.id;
+        }
+        
+        const response = await listingAPI.getAll(apiParams);
         setListings(response.data.data.listings);
         setPagination(response.data.data.pagination);
         setError(null);
@@ -83,6 +95,8 @@ export function useListings(params?: {
     params?.maxPrice,
     params?.city,
     params?.page,
+    params?.myListings,
+    user?.id,
   ]);
 
   return { listings, loading, error, pagination };

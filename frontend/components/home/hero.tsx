@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatedSection } from "@/components/ui/animated-section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,8 @@ import { Container } from "@/components/layout/container";
 import { ChevronDown, Check } from "lucide-react";
 
 type PropertyType = "buy" | "rent" | "projects";
+type Currency = "PKR" | "USD" | "AED" | "SAR";
+type AreaUnit = "marla" | "kanal" | "square-feet";
 
 const cities = [
   "Islamabad",
@@ -20,16 +23,53 @@ const cities = [
   "Quetta",
 ];
 
+const currencies: { code: Currency; label: string }[] = [
+  { code: "PKR", label: "PKR (Rs)" },
+  { code: "USD", label: "USD ($)" },
+  { code: "AED", label: "AED (د.إ)" },
+  { code: "SAR", label: "SAR (﷼)" },
+];
+
+const areaUnits: { value: AreaUnit; label: string }[] = [
+  { value: "marla", label: "Marla" },
+  { value: "kanal", label: "Kanal" },
+  { value: "square-feet", label: "Square Feet" },
+];
+
 export function Hero() {
+  const router = useRouter();
   const [propertyType, setPropertyType] = useState<PropertyType>("buy");
   const [city, setCity] = useState("Islamabad");
   const [location, setLocation] = useState("");
   const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [currency, setCurrency] = useState<Currency>("PKR");
+  const [areaUnit, setAreaUnit] = useState<AreaUnit>("marla");
+  const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
+  const [showAreaUnitDropdown, setShowAreaUnitDropdown] = useState(false);
 
   const handleSearch = () => {
-    console.log("Searching:", { propertyType, city, location });
-    // Handle search logic
+    // Build search query and navigate to properties page
+    const params = new URLSearchParams();
+    params.set("type", propertyType);
+    params.set("city", city);
+    if (location) params.set("location", location);
+    params.set("currency", currency);
+    params.set("areaUnit", areaUnit);
+    router.push(`/properties?${params.toString()}`);
   };
+
+  const handleReset = () => {
+    setPropertyType("buy");
+    setCity("Islamabad");
+    setLocation("");
+    setCurrency("PKR");
+    setAreaUnit("marla");
+    setShowCityDropdown(false);
+    setShowCurrencyDropdown(false);
+    setShowAreaUnitDropdown(false);
+  };
+
+  const anyDropdownOpen = showCityDropdown || showCurrencyDropdown || showAreaUnitDropdown;
 
   return (
     <section className="relative h-[calc(100vh-4rem)] lg:h-[calc(100vh-4.5rem)] flex items-center justify-center overflow-hidden">
@@ -108,7 +148,7 @@ export function Hero() {
                       <ChevronDown className={`h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-[#3A3C40] transition-transform ${showCityDropdown ? 'rotate-180' : ''}`} />
                     </button>
                     {showCityDropdown && (
-                      <div className="absolute z-20 w-full mt-1 bg-white rounded-lg sm:rounded-xl md:rounded-2xl shadow-2xl border border-[#E7EAEF] max-h-60 overflow-y-auto">
+                      <div className="absolute z-[30] w-full mt-1 bg-white rounded-lg sm:rounded-xl md:rounded-2xl shadow-2xl border border-[#E7EAEF] max-h-60 overflow-y-auto">
                         {cities.map((cityOption) => (
                           <button
                             key={cityOption}
@@ -162,15 +202,78 @@ export function Hero() {
                   <span>More Options</span>
                 </button>
                 <span className="text-white/40">|</span>
-                <button className="hover:text-white transition-colors">
-                  Change Currency
-                </button>
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="hover:text-white transition-colors"
+                    onClick={() => {
+                      setShowCurrencyDropdown((v) => !v);
+                      setShowAreaUnitDropdown(false);
+                      setShowCityDropdown(false);
+                    }}
+                  >
+                    Change Currency <span className="text-white/60">({currency})</span>
+                  </button>
+                  {showCurrencyDropdown && (
+                    <div className="absolute z-[30] mt-2 min-w-56 bg-white rounded-xl shadow-2xl border border-[#E7EAEF] overflow-hidden">
+                      {currencies.map((c) => (
+                        <button
+                          key={c.code}
+                          type="button"
+                          onClick={() => {
+                            setCurrency(c.code);
+                            setShowCurrencyDropdown(false);
+                          }}
+                          className="w-full px-4 py-3 text-left text-xs sm:text-sm text-[#111111] hover:bg-[#FAFAFA] transition-colors flex items-center justify-between"
+                        >
+                          <span>{c.label}</span>
+                          {currency === c.code && <Check className="h-4 w-4 text-[#6139DB]" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <span className="text-white/40">|</span>
-                <button className="hover:text-white transition-colors">
-                  Change Area Unit
-                </button>
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="hover:text-white transition-colors"
+                    onClick={() => {
+                      setShowAreaUnitDropdown((v) => !v);
+                      setShowCurrencyDropdown(false);
+                      setShowCityDropdown(false);
+                    }}
+                  >
+                    Change Area Unit{" "}
+                    <span className="text-white/60">
+                      ({areaUnits.find((u) => u.value === areaUnit)?.label || areaUnit})
+                    </span>
+                  </button>
+                  {showAreaUnitDropdown && (
+                    <div className="absolute z-[30] mt-2 min-w-56 bg-white rounded-xl shadow-2xl border border-[#E7EAEF] overflow-hidden">
+                      {areaUnits.map((u) => (
+                        <button
+                          key={u.value}
+                          type="button"
+                          onClick={() => {
+                            setAreaUnit(u.value);
+                            setShowAreaUnitDropdown(false);
+                          }}
+                          className="w-full px-4 py-3 text-left text-xs sm:text-sm text-[#111111] hover:bg-[#FAFAFA] transition-colors flex items-center justify-between"
+                        >
+                          <span>{u.label}</span>
+                          {areaUnit === u.value && <Check className="h-4 w-4 text-[#6139DB]" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <span className="text-white/40">|</span>
-                <button className="hover:text-white transition-colors">
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="hover:text-white transition-colors"
+                >
                   Reset Search
                 </button>
               </div>
@@ -180,10 +283,14 @@ export function Hero() {
       </Container>
 
       {/* Click outside to close dropdown */}
-      {showCityDropdown && (
+      {anyDropdownOpen && (
         <div
-          className="fixed inset-0 z-[5]"
-          onClick={() => setShowCityDropdown(false)}
+          className="fixed inset-0 z-[25]"
+          onClick={() => {
+            setShowCityDropdown(false);
+            setShowCurrencyDropdown(false);
+            setShowAreaUnitDropdown(false);
+          }}
         />
       )}
     </section>

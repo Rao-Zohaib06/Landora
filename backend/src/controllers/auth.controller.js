@@ -37,7 +37,10 @@ export const register = async (req, res, next) => {
       phone,
       passwordHash,
       role: role || 'user',
-      status: role === 'admin' ? 'active' : 'pending',
+      // Regular users are automatically active, agents need approval
+      status: role === 'agent' ? 'pending' : 'active',
+      // Only agents need approval from admin
+      approvedByAdmin: role === 'agent' ? false : true,
     });
 
     // Generate tokens
@@ -57,6 +60,7 @@ export const register = async (req, res, next) => {
           email: user.email,
           role: user.role,
           status: user.status,
+          approvedByAdmin: user.approvedByAdmin,
         },
         token,
         refreshToken,
@@ -102,8 +106,16 @@ export const login = async (req, res, next) => {
       });
     }
 
-    // Check status
-    if (user.status !== 'active') {
+    // Check status - only enforce for agents
+    if (user.role === 'agent' && user.status !== 'active') {
+      return res.status(403).json({
+        success: false,
+        message: `Your agent account is ${user.status}. Please wait for admin approval.`,
+      });
+    }
+
+    // Block suspended/rejected users
+    if (user.status === 'suspended' || user.status === 'rejected') {
       return res.status(403).json({
         success: false,
         message: `Account is ${user.status}. Please contact admin.`,
@@ -128,6 +140,8 @@ export const login = async (req, res, next) => {
           email: user.email,
           role: user.role,
           status: user.status,
+          approvedByAdmin: user.approvedByAdmin,
+          approvedAt: user.approvedAt,
           profile: user.profile,
         },
         token,
@@ -145,7 +159,8 @@ export const login = async (req, res, next) => {
 // @access  Private
 export const getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id)
+      .select('-passwordHash -refreshToken');
 
     res.json({
       success: true,

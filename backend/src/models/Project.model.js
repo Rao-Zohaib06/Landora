@@ -91,9 +91,8 @@ const projectSchema = new mongoose.Schema(
   }
 );
 
-// Indexes
+// Indexes (code index is created automatically by unique: true)
 projectSchema.index({ name: 1 });
-projectSchema.index({ code: 1 });
 projectSchema.index({ status: 1 });
 projectSchema.index({ 'location.city': 1 });
 

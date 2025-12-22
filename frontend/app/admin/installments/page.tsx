@@ -13,61 +13,77 @@ import {
 import { AnimatedSection } from "@/components/ui/animated-section";
 import { Plus, CreditCard, AlertCircle, CheckCircle2 } from "lucide-react";
 import { StatCard } from "@/components/admin/stat-card";
-
-interface Installment {
-  id: string;
-  buyer: string;
-  plot: string;
-  planType: string;
-  totalAmount: string;
-  paidAmount: string;
-  remainingAmount: string;
-  nextDueDate: string;
-  status: "current" | "overdue" | "paid";
-  overdueDays?: number;
-}
-
-const mockInstallments: Installment[] = [
-  {
-    id: "INS-001",
-    buyer: "Hassan Raza",
-    plot: "PL-202",
-    planType: "Monthly",
-    totalAmount: "PKR 18M",
-    paidAmount: "PKR 6M",
-    remainingAmount: "PKR 12M",
-    nextDueDate: "2024-01-15",
-    status: "current",
-  },
-  {
-    id: "INS-002",
-    buyer: "Fatima Sheikh",
-    plot: "PL-311",
-    planType: "Quarterly",
-    totalAmount: "PKR 9.5M",
-    paidAmount: "PKR 3M",
-    remainingAmount: "PKR 6.5M",
-    nextDueDate: "2024-01-05",
-    status: "overdue",
-    overdueDays: 12,
-  },
-  {
-    id: "INS-003",
-    buyer: "Ahmed Ali",
-    plot: "PL-205",
-    planType: "Bi-Annual",
-    totalAmount: "PKR 32M",
-    paidAmount: "PKR 20M",
-    remainingAmount: "PKR 12M",
-    nextDueDate: "2024-06-01",
-    status: "current",
-  },
-];
+import { useInstallments } from "@/hooks/use-installments";
 
 export default function InstallmentsPage() {
-  const totalReceivables = "PKR 30.5M";
-  const overdueAmount = "PKR 6.5M";
-  const currentMonthCollection = "PKR 8.2M";
+  const { plans, loading } = useInstallments();
+
+  // Calculate stats from real data
+  const stats = plans.reduce(
+    (acc, plan) => {
+      const isOverdue = plan.installments.some(
+        (inst) => !inst.paid && new Date(inst.dueDate) < new Date()
+      );
+      
+      const overdueAmount = plan.installments
+        .filter((inst) => !inst.paid && new Date(inst.dueDate) < new Date())
+        .reduce((sum, inst) => sum + inst.amount, 0);
+
+      const thisMonthCollection = plan.installments
+        .filter((inst) => {
+          if (!inst.paid || !inst.paidDate) return false;
+          const paidDate = new Date(inst.paidDate);
+          const now = new Date();
+          return (
+            paidDate.getMonth() === now.getMonth() &&
+            paidDate.getFullYear() === now.getFullYear()
+          );
+        })
+        .reduce((sum, inst) => sum + inst.amount, 0);
+
+      return {
+        totalReceivables: acc.totalReceivables + plan.remainingAmount,
+        overdueAmount: acc.overdueAmount + overdueAmount,
+        thisMonthCollection: acc.thisMonthCollection + thisMonthCollection,
+      };
+    },
+    { totalReceivables: 0, overdueAmount: 0, thisMonthCollection: 0 }
+  );
+
+  // Helper to get next due date
+  const getNextDueDate = (plan: any) => {
+    const nextInstallment = plan.installments.find((inst: any) => !inst.paid);
+    if (nextInstallment) {
+      return new Date(nextInstallment.dueDate).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    }
+    return "N/A";
+  };
+
+  // Helper to check if overdue
+  const isOverdue = (plan: any) => {
+    return plan.installments.some(
+      (inst: any) => !inst.paid && new Date(inst.dueDate) < new Date()
+    );
+  };
+
+  // Helper to get overdue days
+  const getOverdueDays = (plan: any) => {
+    const overdueInstallment = plan.installments.find(
+      (inst: any) => !inst.paid && new Date(inst.dueDate) < new Date()
+    );
+    if (overdueInstallment) {
+      const dueDate = new Date(overdueInstallment.dueDate);
+      const today = new Date();
+      const diffTime = Math.abs(today.getTime() - dueDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays;
+    }
+    return 0;
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8">
@@ -89,19 +105,19 @@ export default function InstallmentsPage() {
       <AnimatedSection variant="slideUp" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           title="Total Receivables"
-          value={totalReceivables}
+          value={`PKR ${(stats.totalReceivables / 1000000).toFixed(2)}M`}
           icon={CreditCard}
           iconBg="bg-blue-100"
         />
         <StatCard
           title="Overdue Amount"
-          value={overdueAmount}
+          value={`PKR ${(stats.overdueAmount / 1000000).toFixed(2)}M`}
           icon={AlertCircle}
           iconBg="bg-red-100"
         />
         <StatCard
           title="This Month Collection"
-          value={currentMonthCollection}
+          value={`PKR ${(stats.thisMonthCollection / 1000000).toFixed(2)}M`}
           icon={CheckCircle2}
           iconBg="bg-green-100"
         />
@@ -120,7 +136,7 @@ export default function InstallmentsPage() {
                   <TableHead>Installment ID</TableHead>
                   <TableHead>Buyer</TableHead>
                   <TableHead>Plot</TableHead>
-                  <TableHead>Plan Type</TableHead>
+                  <TableHead>Project</TableHead>
                   <TableHead>Total Amount</TableHead>
                   <TableHead>Paid</TableHead>
                   <TableHead>Remaining</TableHead>
@@ -130,40 +146,54 @@ export default function InstallmentsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockInstallments.map((installment) => (
-                  <TableRow key={installment.id}>
-                    <TableCell className="font-medium">{installment.id}</TableCell>
-                    <TableCell>{installment.buyer}</TableCell>
-                    <TableCell>{installment.plot}</TableCell>
-                    <TableCell>{installment.planType}</TableCell>
-                    <TableCell>{installment.totalAmount}</TableCell>
-                    <TableCell className="text-green-600 font-medium">
-                      {installment.paidAmount}
-                    </TableCell>
-                    <TableCell>{installment.remainingAmount}</TableCell>
-                    <TableCell>{installment.nextDueDate}</TableCell>
-                    <TableCell>
-                      {installment.status === "overdue" ? (
-                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-red-100 text-red-800">
-                          Overdue ({installment.overdueDays} days)
-                        </span>
-                      ) : installment.status === "current" ? (
-                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-blue-100 text-blue-800">
-                          Current
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-green-100 text-green-800">
-                          Paid
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm">
-                        View Ledger
-                      </Button>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center py-8">
+                      Loading installment plans...
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : plans.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center py-8 text-gray-500">
+                      No installment plans found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  plans.map((plan) => (
+                    <TableRow key={plan._id}>
+                      <TableCell className="font-medium">#{plan._id.slice(-6)}</TableCell>
+                      <TableCell>{plan.buyerId?.name || 'N/A'}</TableCell>
+                      <TableCell>{plan.plotId?.plotNo || 'N/A'}</TableCell>
+                      <TableCell>{plan.projectId?.name || 'N/A'}</TableCell>
+                      <TableCell>PKR {plan.totalAmount.toLocaleString()}</TableCell>
+                      <TableCell className="text-green-600 font-medium">
+                        PKR {plan.totalPaid.toLocaleString()}
+                      </TableCell>
+                      <TableCell>PKR {plan.remainingAmount.toLocaleString()}</TableCell>
+                      <TableCell>{getNextDueDate(plan)}</TableCell>
+                      <TableCell>
+                        {isOverdue(plan) ? (
+                          <span className="px-2 py-1 rounded-lg text-xs font-medium bg-red-100 text-red-800">
+                            Overdue ({getOverdueDays(plan)} days)
+                          </span>
+                        ) : plan.status === "completed" ? (
+                          <span className="px-2 py-1 rounded-lg text-xs font-medium bg-green-100 text-green-800">
+                            Paid
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 rounded-lg text-xs font-medium bg-blue-100 text-blue-800">
+                            {plan.status}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm">
+                          View Ledger
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>

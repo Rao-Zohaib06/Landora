@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,58 +14,82 @@ import {
 import { AnimatedSection } from "@/components/ui/animated-section";
 import { Wallet, AlertCircle, CheckCircle2 } from "lucide-react";
 import { StatCard } from "@/components/admin/stat-card";
+import { sellerPaymentAPI } from "@/lib/api";
 
 interface SellerPayment {
-  id: string;
-  seller: string;
-  project: string;
-  totalPayable: string;
-  paidAmount: string;
-  pendingAmount: string;
-  nextPaymentDate?: string;
+  _id: string;
+  projectId: {
+    _id: string;
+    name: string;
+  };
+  plotId?: {
+    _id: string;
+    plotNo: string;
+  };
+  sellerName: string;
+  sellerContact?: string;
+  totalAmount: number;
+  paidAmount: number;
+  pendingAmount: number;
   paymentMode: "lump-sum" | "installments";
+  installments?: Array<{
+    amount: number;
+    dueDate: string;
+    status: string;
+    paidDate?: string;
+  }>;
   status: "pending" | "partial" | "paid";
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-const mockSellerPayments: SellerPayment[] = [
-  {
-    id: "SP-001",
-    seller: "Ahmed Landowner",
-    project: "Emerald Enclave",
-    totalPayable: "PKR 50M",
-    paidAmount: "PKR 30M",
-    pendingAmount: "PKR 20M",
-    nextPaymentDate: "2024-02-01",
-    paymentMode: "installments",
-    status: "partial",
-  },
-  {
-    id: "SP-002",
-    seller: "Sara Property Owner",
-    project: "Canal Heights",
-    totalPayable: "PKR 30M",
-    paidAmount: "PKR 0",
-    pendingAmount: "PKR 30M",
-    nextPaymentDate: "2024-01-15",
-    paymentMode: "lump-sum",
-    status: "pending",
-  },
-  {
-    id: "SP-003",
-    seller: "Bilal Estate",
-    project: "Skyline Residency",
-    totalPayable: "PKR 25M",
-    paidAmount: "PKR 25M",
-    pendingAmount: "PKR 0",
-    paymentMode: "lump-sum",
-    status: "paid",
-  },
-];
-
 export default function SellerPaymentsPage() {
-  const totalPayable = "PKR 105M";
-  const totalPaid = "PKR 55M";
-  const totalPending = "PKR 50M";
+  const [payments, setPayments] = useState<SellerPayment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSellerPayments();
+  }, []);
+
+  const fetchSellerPayments = async () => {
+    try {
+      setLoading(true);
+      const response = await sellerPaymentAPI.getAll();
+      setPayments(response.data || []);
+    } catch (error) {
+      console.error("Failed to fetch seller payments:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Calculate stats from real data
+  const stats = payments.reduce(
+    (acc, payment) => ({
+      totalPayable: acc.totalPayable + payment.totalAmount,
+      totalPaid: acc.totalPaid + payment.paidAmount,
+      totalPending: acc.totalPending + payment.pendingAmount,
+    }),
+    { totalPayable: 0, totalPaid: 0, totalPending: 0 }
+  );
+
+  // Find next payment date for each seller
+  const getNextPaymentDate = (payment: SellerPayment) => {
+    if (payment.paymentMode === "installments" && payment.installments) {
+      const pendingInstallment = payment.installments.find(
+        (inst) => inst.status === "pending"
+      );
+      if (pendingInstallment) {
+        return new Date(pendingInstallment.dueDate).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        });
+      }
+    }
+    return "-";
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8">
@@ -85,19 +110,19 @@ export default function SellerPaymentsPage() {
       <AnimatedSection variant="slideUp" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           title="Total Payable"
-          value={totalPayable}
+          value={`PKR ${(stats.totalPayable / 1000000).toFixed(2)}M`}
           icon={Wallet}
           iconBg="bg-blue-100"
         />
         <StatCard
           title="Total Paid"
-          value={totalPaid}
+          value={`PKR ${(stats.totalPaid / 1000000).toFixed(2)}M`}
           icon={CheckCircle2}
           iconBg="bg-green-100"
         />
         <StatCard
           title="Pending Payments"
-          value={totalPending}
+          value={`PKR ${(stats.totalPending / 1000000).toFixed(2)}M`}
           icon={AlertCircle}
           iconBg="bg-red-100"
         />
@@ -126,46 +151,74 @@ export default function SellerPaymentsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockSellerPayments.map((payment) => (
-                  <TableRow key={payment.id}>
-                    <TableCell className="font-medium">{payment.id}</TableCell>
-                    <TableCell>{payment.seller}</TableCell>
-                    <TableCell>{payment.project}</TableCell>
-                    <TableCell>{payment.totalPayable}</TableCell>
-                    <TableCell className="text-green-600 font-medium">
-                      {payment.paidAmount}
-                    </TableCell>
-                    <TableCell className="text-orange-600 font-medium">
-                      {payment.pendingAmount}
-                    </TableCell>
-                    <TableCell>
-                      <span className="px-2 py-1 rounded-lg text-xs font-medium bg-[#E7EAEF] text-[#3A3C40]">
-                        {payment.paymentMode}
-                      </span>
-                    </TableCell>
-                    <TableCell>{payment.nextPaymentDate || "-"}</TableCell>
-                    <TableCell>
-                      {payment.status === "paid" ? (
-                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-green-100 text-green-800">
-                          Paid
-                        </span>
-                      ) : payment.status === "partial" ? (
-                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-yellow-100 text-yellow-800">
-                          Partial
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-red-100 text-red-800">
-                          Pending
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm">
-                        View Ledger
-                      </Button>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center py-8">
+                      Loading seller payments...
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : payments.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center py-8 text-gray-500">
+                      No seller payments found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  payments.map((payment) => (
+                    <TableRow key={payment._id}>
+                      <TableCell className="font-medium">#{payment._id.slice(-6)}</TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{payment.sellerName}</p>
+                          {payment.sellerContact && (
+                            <p className="text-xs text-gray-500">{payment.sellerContact}</p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p>{payment.projectId?.name || 'N/A'}</p>
+                          {payment.plotId && (
+                            <p className="text-xs text-gray-500">Plot: {payment.plotId.plotNo}</p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>PKR {payment.totalAmount.toLocaleString()}</TableCell>
+                      <TableCell className="text-green-600 font-medium">
+                        PKR {payment.paidAmount.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-orange-600 font-medium">
+                        PKR {payment.pendingAmount.toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-[#E7EAEF] text-[#3A3C40]">
+                          {payment.paymentMode}
+                        </span>
+                      </TableCell>
+                      <TableCell>{getNextPaymentDate(payment)}</TableCell>
+                      <TableCell>
+                        {payment.status === "paid" ? (
+                          <span className="px-2 py-1 rounded-lg text-xs font-medium bg-green-100 text-green-800">
+                            Paid
+                          </span>
+                        ) : payment.status === "partial" ? (
+                          <span className="px-2 py-1 rounded-lg text-xs font-medium bg-yellow-100 text-yellow-800">
+                            Partial
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 rounded-lg text-xs font-medium bg-red-100 text-red-800">
+                            Pending
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm">
+                          View Ledger
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>

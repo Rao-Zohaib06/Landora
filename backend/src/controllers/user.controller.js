@@ -96,6 +96,9 @@ export const createUser = async (req, res, next) => {
       passwordHash,
       role: role || 'user',
       status: 'active',
+      // If admin creates an agent with active status, mark as approved
+      approvedByAdmin: role === 'agent' ? true : true,
+      approvedAt: role === 'agent' ? new Date() : undefined,
     });
 
     res.status(201).json({
@@ -130,6 +133,22 @@ export const updateUser = async (req, res, next) => {
     if (!isAdmin) {
       delete updateData.role;
       delete updateData.status;
+    }
+
+    // Get the user to check their role
+    const existingUser = await User.findById(userId);
+    if (!existingUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // If admin is setting agent status to active, also approve the agent
+    const targetRole = updateData.role || existingUser.role;
+    if (isAdmin && updateData.status === 'active' && targetRole === 'agent') {
+      updateData.approvedByAdmin = true;
+      updateData.approvedAt = new Date();
     }
 
     // Handle password update

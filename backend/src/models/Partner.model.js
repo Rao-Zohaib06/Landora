@@ -112,8 +112,7 @@ const partnerSchema = new mongoose.Schema(
   }
 );
 
-// Indexes
-partnerSchema.index({ email: 1 });
+// Indexes (email index is created automatically by unique: true)
 partnerSchema.index({ status: 1 });
 
 // Virtual for current capital balance

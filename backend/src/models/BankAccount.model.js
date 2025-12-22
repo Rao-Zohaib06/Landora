@@ -84,8 +84,7 @@ const bankAccountSchema = new mongoose.Schema(
   }
 );
 
-// Indexes
-bankAccountSchema.index({ accountNo: 1 });
+// Indexes (accountNo index is created automatically by unique: true)
 bankAccountSchema.index({ bank: 1 });
 bankAccountSchema.index({ isActive: 1 });
 

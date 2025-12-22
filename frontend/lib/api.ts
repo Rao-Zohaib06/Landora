@@ -6,6 +6,8 @@ export const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  // Needed so HttpOnly cookies (e.g. env-admin session) can be sent to the backend on cross-origin (different port).
+  withCredentials: true,
 });
 
 // Request interceptor - Add auth token
@@ -17,7 +19,7 @@ api.interceptors.request.use(
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
-    return config;
+  return config;
   },
   (error) => {
     return Promise.reject(error);
@@ -228,6 +230,8 @@ export const commissionAPI = {
     api.get("/commissions/rules", { params }),
 
   createRule: (data: any) => api.post("/commissions/rules", data),
+
+  updateRule: (id: string, data: any) => api.put(`/commissions/rules/${id}`, data),
 };
 
 // Installment API
@@ -285,15 +289,6 @@ export const reportAPI = {
     api.get(`/reports/project/${projectId}`),
 };
 
-// Partner API (placeholder - implement when backend is ready)
-export const partnerAPI = {
-  getAll: () => api.get("/partners"),
-  getById: (id: string) => api.get(`/partners/${id}`),
-  create: (data: any) => api.post("/partners", data),
-  update: (id: string, data: any) => api.put(`/partners/${id}`, data),
-  delete: (id: string) => api.delete(`/partners/${id}`),
-};
-
 // Seller Payment API (placeholder)
 export const sellerPaymentAPI = {
   getAll: () => api.get("/seller-payments"),
@@ -330,4 +325,64 @@ export const fileAPI = {
     api.post("/files/upload", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
+};
+
+// Calculator API
+export const calculatorAPI = {
+  calculateConstructionCost: (data: {
+    area: number;
+    areaUnit: "sqft" | "marla";
+    constructionType: "basic" | "standard" | "premium" | "luxury";
+    city?: string;
+    floors?: number;
+    basement?: boolean;
+    roofType?: "flat" | "sloped" | "terrace";
+  }) => api.post("/calculators/construction-cost", data),
+
+  calculateHomeLoan: (data: {
+    propertyValue: number;
+    downPayment: number;
+    downPaymentType: "amount" | "percentage";
+    interestRate: number;
+    loanTenure: number;
+    loanType?: "fixed" | "floating";
+  }) => api.post("/calculators/home-loan", data),
+
+  convertAreaUnit: (data: {
+    value: number;
+    fromUnit: string;
+    toUnit: string;
+  }) => api.post("/calculators/area-converter", data),
+
+  getConstructionRates: () => api.get("/calculators/construction-rates"),
+};
+
+// Agent Approval API
+export const agentApprovalAPI = {
+  getPendingAgents: () => api.get("/admin/agents/pending"),
+  getAllAgents: (params?: { status?: string }) => api.get("/admin/agents", { params }),
+  approveAgent: (id: string) => api.put(`/admin/agents/${id}/approve`),
+  rejectAgent: (id: string, reason?: string) => api.put(`/admin/agents/${id}/reject`, { reason }),
+  suspendAgent: (id: string, reason?: string) => api.put(`/admin/agents/${id}/suspend`, { reason }),
+  reactivateAgent: (id: string) => api.put(`/admin/agents/${id}/reactivate`),
+  getApprovedAgents: () => api.get("/agents/approved"),
+};
+
+// Notification API
+export const notificationAPI = {
+  getMyNotifications: () => api.get("/api/agents/notifications"),
+  markAsRead: (id: string) => api.put(`/api/agents/notifications/${id}/read`),
+  markAllAsRead: () => api.put("/api/agents/notifications/read-all"),
+  deleteNotification: (id: string) => api.delete(`/api/agents/notifications/${id}`),
+};
+
+// Partner API
+export const partnerAPI = {
+  getAll: (params?: { active?: boolean }) => api.get("/partners", { params }),
+  getById: (id: string) => api.get(`/partners/${id}`),
+  create: (data: any) => api.post("/partners", data),
+  update: (id: string, data: any) => api.put(`/partners/${id}`, data),
+  addCapitalTransaction: (id: string, data: any) => api.post(`/partners/${id}/capital`, data),
+  getCapitalHistory: (id: string) => api.get(`/partners/${id}/capital`),
+  getProfitDistribution: (id: string, params?: any) => api.get(`/partners/${id}/profit`, { params }),
 };

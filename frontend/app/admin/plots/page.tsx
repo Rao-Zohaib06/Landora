@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,9 +13,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AnimatedSection } from "@/components/ui/animated-section";
-import { Plus, Search, Filter, MapPin } from "lucide-react";
+import { PageLoader } from "@/components/ui/loader";
+import { Plus, Search, MapPin } from "lucide-react";
 import { usePlots } from "@/hooks/use-plots";
 import { useProjects } from "@/hooks/use-projects";
+import Link from "next/link";
 
 type PlotStatus = "available" | "sold" | "blocked" | "disputed" | "reserved";
 
@@ -44,11 +46,7 @@ export default function PlotsPage() {
   );
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6139DB]"></div>
-      </div>
-    );
+    return <PageLoader text="Loading plots..." />;
   }
 
   if (error) {
@@ -68,9 +66,11 @@ export default function PlotsPage() {
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#111111]">Plot Management</h1>
             <p className="text-[#3A3C40] mt-1">Manage plots across all projects</p>
           </div>
-          <Button className="bg-[#6139DB] hover:bg-[#6139DB]/90">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Plot
+          <Button className="bg-[#6139DB] hover:bg-[#6139DB]/90" asChild>
+            <Link href="/admin/plots/new">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Plot
+            </Link>
           </Button>
         </div>
       </AnimatedSection>

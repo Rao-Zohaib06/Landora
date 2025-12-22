@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,71 +13,106 @@ import {
 } from "@/components/ui/table";
 import { AnimatedSection } from "@/components/ui/animated-section";
 import { FileText, Download, Filter } from "lucide-react";
+import { ledgerAPI } from "@/lib/api";
 
 type LedgerType = "buyer" | "seller" | "partner" | "agent" | "all";
 
 interface LedgerEntry {
-  id: string;
+  _id: string;
   date: string;
   type: string;
   description: string;
-  debit: string;
-  credit: string;
-  balance: string;
-  aging?: string;
+  debit: number;
+  credit: number;
+  balance: number;
+  partyType: string;
+  partyId: {
+    _id: string;
+    name?: string;
+    sellerName?: string;
+  };
+  plotId?: {
+    _id: string;
+    plotNo: string;
+  };
+  projectId?: {
+    _id: string;
+    name: string;
+  };
+  createdAt: string;
 }
-
-const mockBuyerLedger: LedgerEntry[] = [
-  {
-    id: "BL-001",
-    date: "2024-01-15",
-    type: "Installment",
-    description: "Monthly payment - PL-202",
-    debit: "-",
-    credit: "PKR 500K",
-    balance: "PKR 12M",
-    aging: "0-30",
-  },
-  {
-    id: "BL-002",
-    date: "2024-01-05",
-    type: "Down Payment",
-    description: "Initial payment - PL-311",
-    debit: "-",
-    credit: "PKR 2M",
-    balance: "PKR 7.5M",
-    aging: "31-60",
-  },
-];
-
-const mockSellerLedger: LedgerEntry[] = [
-  {
-    id: "SL-001",
-    date: "2024-01-10",
-    type: "Payment",
-    description: "Installment payment - Emerald Enclave",
-    debit: "PKR 5M",
-    credit: "-",
-    balance: "PKR 20M",
-  },
-  {
-    id: "SL-002",
-    date: "2024-01-01",
-    type: "Payment",
-    description: "Monthly payment - Canal Heights",
-    debit: "PKR 3M",
-    credit: "-",
-    balance: "PKR 25M",
-  },
-];
 
 export default function LedgersPage() {
   const [selectedLedger, setSelectedLedger] = useState<LedgerType>("all");
+  const [ledgers, setLedgers] = useState<LedgerEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [agingData, setAgingData] = useState({
+    "0-30": 0,
+    "31-60": 0,
+    "61-90": 0,
+    "90+": 0,
+  });
 
-  const getLedgerData = () => {
-    if (selectedLedger === "buyer") return mockBuyerLedger;
-    if (selectedLedger === "seller") return mockSellerLedger;
-    return [...mockBuyerLedger, ...mockSellerLedger];
+  useEffect(() => {
+    fetchLedgers();
+  }, [selectedLedger]);
+
+  const fetchLedgers = async () => {
+    try {
+      setLoading(true);
+      const params: any = {};
+      
+      if (selectedLedger !== "all") {
+        params.partyType = selectedLedger;
+      }
+
+      const response = await ledgerAPI.getAll(params);
+      const entries = response.data.data?.entries || response.data.data || response.data || [];
+      setLedgers(Array.isArray(entries) ? entries : []);
+
+      // Calculate aging data for buyer ledgers
+      if (selectedLedger === "buyer" || selectedLedger === "all") {
+        const aging = {
+          "0-30": 0,
+          "31-60": 0,
+          "61-90": 0,
+          "90+": 0,
+        };
+
+        const entriesArray = Array.isArray(entries) ? entries : [];
+        entriesArray.forEach((entry: LedgerEntry) => {
+          if (entry.partyType === "buyer" && entry.balance > 0) {
+            const daysDiff = Math.floor(
+              (new Date().getTime() - new Date(entry.date).getTime()) /
+                (1000 * 60 * 60 * 24)
+            );
+
+            if (daysDiff <= 30) aging["0-30"] += entry.balance;
+            else if (daysDiff <= 60) aging["31-60"] += entry.balance;
+            else if (daysDiff <= 90) aging["61-90"] += entry.balance;
+            else aging["90+"] += entry.balance;
+          }
+        });
+
+        setAgingData(aging);
+      }
+    } catch (error) {
+      console.error("Failed to fetch ledgers:", error);
+      setLedgers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getAgingBucket = (date: string) => {
+    const daysDiff = Math.floor(
+      (new Date().getTime() - new Date(date).getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    if (daysDiff <= 30) return "0-30";
+    else if (daysDiff <= 60) return "31-60";
+    else if (daysDiff <= 90) return "61-90";
+    else return "90+";
   };
 
   return (
@@ -126,33 +161,43 @@ export default function LedgersPage() {
       </AnimatedSection>
 
       {/* Aging Report */}
-      <AnimatedSection variant="slideUp">
-        <Card className="bg-white border-[#E7EAEF]">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold text-[#111111]">Aging Report</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-              <div className="p-4 bg-blue-50 rounded-xl">
-                <p className="text-xs text-[#3A3C40] mb-1">0-30 Days</p>
-                <p className="text-2xl font-bold text-[#111111]">PKR 45M</p>
+      {(selectedLedger === "buyer" || selectedLedger === "all") && (
+        <AnimatedSection variant="slideUp">
+          <Card className="bg-white border-[#E7EAEF]">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-[#111111]">Aging Report</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                <div className="p-4 bg-blue-50 rounded-xl">
+                  <p className="text-xs text-[#3A3C40] mb-1">0-30 Days</p>
+                  <p className="text-2xl font-bold text-[#111111]">
+                    PKR {(agingData["0-30"] / 1000000).toFixed(2)}M
+                  </p>
+                </div>
+                <div className="p-4 bg-yellow-50 rounded-xl">
+                  <p className="text-xs text-[#3A3C40] mb-1">31-60 Days</p>
+                  <p className="text-2xl font-bold text-[#111111]">
+                    PKR {(agingData["31-60"] / 1000000).toFixed(2)}M
+                  </p>
+                </div>
+                <div className="p-4 bg-orange-50 rounded-xl">
+                  <p className="text-xs text-[#3A3C40] mb-1">61-90 Days</p>
+                  <p className="text-2xl font-bold text-[#111111]">
+                    PKR {(agingData["61-90"] / 1000000).toFixed(2)}M
+                  </p>
+                </div>
+                <div className="p-4 bg-red-50 rounded-xl">
+                  <p className="text-xs text-[#3A3C40] mb-1">90+ Days</p>
+                  <p className="text-2xl font-bold text-[#111111]">
+                    PKR {(agingData["90+"] / 1000000).toFixed(2)}M
+                  </p>
+                </div>
               </div>
-              <div className="p-4 bg-yellow-50 rounded-xl">
-                <p className="text-xs text-[#3A3C40] mb-1">31-60 Days</p>
-                <p className="text-2xl font-bold text-[#111111]">PKR 28M</p>
-              </div>
-              <div className="p-4 bg-orange-50 rounded-xl">
-                <p className="text-xs text-[#3A3C40] mb-1">61-90 Days</p>
-                <p className="text-2xl font-bold text-[#111111]">PKR 15M</p>
-              </div>
-              <div className="p-4 bg-red-50 rounded-xl">
-                <p className="text-xs text-[#3A3C40] mb-1">90+ Days</p>
-                <p className="text-2xl font-bold text-[#111111]">PKR 8M</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </AnimatedSection>
+            </CardContent>
+          </Card>
+        </AnimatedSection>
+      )}
 
       {/* Ledger Table */}
       <AnimatedSection variant="slideUp">
@@ -168,33 +213,69 @@ export default function LedgersPage() {
                 <TableRow>
                   <TableHead>Entry ID</TableHead>
                   <TableHead>Date</TableHead>
+                  <TableHead>Party</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead className="text-right">Debit</TableHead>
                   <TableHead className="text-right">Credit</TableHead>
                   <TableHead className="text-right">Balance</TableHead>
-                  {selectedLedger === "buyer" && <TableHead>Aging</TableHead>}
+                  {(selectedLedger === "buyer" || selectedLedger === "all") && <TableHead>Aging</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {getLedgerData().map((entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell className="font-medium">{entry.id}</TableCell>
-                    <TableCell>{entry.date}</TableCell>
-                    <TableCell>{entry.type}</TableCell>
-                    <TableCell>{entry.description}</TableCell>
-                    <TableCell className="text-right text-red-600">{entry.debit}</TableCell>
-                    <TableCell className="text-right text-green-600">{entry.credit}</TableCell>
-                    <TableCell className="text-right font-semibold">{entry.balance}</TableCell>
-                    {selectedLedger === "buyer" && entry.aging && (
-                      <TableCell>
-                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-blue-100 text-blue-800">
-                          {entry.aging} days
-                        </span>
-                      </TableCell>
-                    )}
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8">
+                      Loading ledger entries...
+                    </TableCell>
                   </TableRow>
-                ))}
+                ) : ledgers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                      No ledger entries found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  ledgers.map((entry) => (
+                    <TableRow key={entry._id}>
+                      <TableCell className="font-medium">#{entry._id.slice(-6)}</TableCell>
+                      <TableCell>
+                        {new Date(entry.date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">
+                            {entry.partyId?.name || entry.partyId?.sellerName || 'N/A'}
+                          </p>
+                          <p className="text-xs text-gray-500">{entry.partyType}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>{entry.type}</TableCell>
+                      <TableCell className="max-w-xs truncate">{entry.description}</TableCell>
+                      <TableCell className="text-right text-red-600">
+                        {entry.debit > 0 ? `PKR ${entry.debit.toLocaleString()}` : "-"}
+                      </TableCell>
+                      <TableCell className="text-right text-green-600">
+                        {entry.credit > 0 ? `PKR ${entry.credit.toLocaleString()}` : "-"}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        PKR {entry.balance.toLocaleString()}
+                      </TableCell>
+                      {(selectedLedger === "buyer" || selectedLedger === "all") &&
+                        entry.partyType === "buyer" && (
+                          <TableCell>
+                            <span className="px-2 py-1 rounded-lg text-xs font-medium bg-blue-100 text-blue-800">
+                              {getAgingBucket(entry.date)} days
+                            </span>
+                          </TableCell>
+                        )}
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>

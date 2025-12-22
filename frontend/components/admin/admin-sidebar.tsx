@@ -18,6 +18,7 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  ShieldCheck,
 } from "lucide-react";
 
 interface NavItem {
@@ -30,6 +31,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { title: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { title: "Users", href: "/admin/users", icon: Users },
+  { title: "Agents", href: "/admin/agents", icon: ShieldCheck },
   { title: "Projects", href: "/admin/projects", icon: Building2 },
   { title: "Plots", href: "/admin/plots", icon: MapPin },
   { title: "Partners", href: "/admin/partners", icon: UserCheck },

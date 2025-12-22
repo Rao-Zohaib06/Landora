@@ -11,6 +11,7 @@ import projectRoutes from './routes/project.routes.js';
 import plotRoutes from './routes/plot.routes.js';
 import listingRoutes from './routes/listing.routes.js';
 import agentRoutes from './routes/agent.routes.js';
+import agentApprovalRoutes from './routes/agentApproval.routes.js';
 import partnerRoutes from './routes/partner.routes.js';
 import commissionRoutes from './routes/commission.routes.js';
 import installmentRoutes from './routes/installment.routes.js';
@@ -20,6 +21,7 @@ import bankAccountRoutes from './routes/bankAccount.routes.js';
 import importRoutes from './routes/import.routes.js';
 import reportRoutes from './routes/report.routes.js';
 import fileRoutes from './routes/file.routes.js';
+import calculatorRoutes from './routes/calculator.routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -47,6 +49,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/plots', plotRoutes);
 app.use('/api/listings', listingRoutes);
 app.use('/api/agents', agentRoutes);
+app.use('/api/admin/agents', agentApprovalRoutes);
 app.use('/api/partners', partnerRoutes);
 app.use('/api/commissions', commissionRoutes);
 app.use('/api/installments', installmentRoutes);
@@ -56,6 +59,7 @@ app.use('/api/bank-accounts', bankAccountRoutes);
 app.use('/api/imports', importRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/files', fileRoutes);
+app.use('/api/calculators', calculatorRoutes);
 
 // 404 Handler
 app.use((req, res) => {

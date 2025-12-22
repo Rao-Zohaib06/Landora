@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { StatCard } from "@/components/agent/stat-card";
 import { ChartContainer } from "@/components/admin/chart-container";
 import { AnimatedSection } from "@/components/ui/animated-section";
+import { PageLoader } from "@/components/ui/loader";
 import {
   Building2,
   Users,
@@ -11,6 +12,10 @@ import {
   CreditCard,
   TrendingUp,
   AlertCircle,
+  Clock,
+  XCircle,
+  RefreshCw,
+  LogOut,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCommissions } from "@/hooks/use-commissions";
@@ -18,6 +23,9 @@ import { useListings } from "@/hooks/use-listings";
 import { useInstallments } from "@/hooks/use-installments";
 import { usePlots } from "@/hooks/use-plots";
 import { reportAPI } from "@/lib/api";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 function LineChart({ data }: { data: { month: string; value: number }[] }) {
   const maxValue = Math.max(...data.map((d) => d.value), 1);
@@ -41,7 +49,7 @@ function LineChart({ data }: { data: { month: string; value: number }[] }) {
 }
 
 export default function AgentDashboardPage() {
-  const { user } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
   const { commissions, loading: commissionsLoading } = useCommissions({
     agentId: user?.id,
   });
@@ -61,17 +69,22 @@ export default function AgentDashboardPage() {
       try {
         const response = await reportAPI.getMonthlyProgress();
         const data = response.data.data.report;
-        // Mock monthly data - in real app, fetch agent-specific monthly data
-        setMonthlyPerformance([
-          { month: "Jul", value: 12 },
-          { month: "Aug", value: 18 },
-          { month: "Sep", value: 15 },
-          { month: "Oct", value: 22 },
-          { month: "Nov", value: 28 },
-          { month: "Dec", value: 32 },
-        ]);
+        
+        // Transform backend monthly data for chart
+        if (Array.isArray(data) && data.length > 0) {
+          const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          const transformed = data.map((item: any) => ({
+            month: monthNames[item.month - 1] || `M${item.month}`,
+            value: Math.round((item.totalRevenue || 0) / 1000000) // Convert to millions
+          }));
+          setMonthlyPerformance(transformed);
+        } else {
+          // If no data, show empty chart
+          setMonthlyPerformance([]);
+        }
       } catch (error) {
         console.error("Failed to fetch performance:", error);
+        setMonthlyPerformance([]);
       } finally {
         setLoading(false);
       }
@@ -122,6 +135,139 @@ export default function AgentDashboardPage() {
     );
   }
 
+  // Check if agent is not approved
+  // Agent needs both active status AND approvedByAdmin flag to access dashboard
+  if (user?.status !== "active" || user?.approvedByAdmin !== true) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-2xl w-full">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center">
+              <Clock className="w-8 h-8 text-yellow-600" />
+            </div>
+            <CardTitle className="text-2xl">Account Pending Approval</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-[#3A3C40] text-lg">
+              Your agent account is currently under review by our admin team.
+            </p>
+            <p className="text-[#3A3C40]">
+              We'll notify you via email once your account has been approved.
+              This typically takes 1-2 business days.
+            </p>
+            
+            {/* Helpful action buttons */}
+            <div className="flex gap-3 justify-center pt-4">
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  await refreshUser();
+                  window.location.reload();
+                }}
+                className="gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Check Status
+              </Button>
+              <Button
+                variant="outline"
+                onClick={logout}
+                className="gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+              <p className="text-sm text-blue-900">
+                <strong>What's next?</strong> Once approved, you'll have full access to:
+              </p>
+              <ul className="text-sm text-blue-800 mt-2 space-y-1 text-left list-disc list-inside">
+                <li>Lead management system</li>
+                <li>Property listing creation</li>
+                <li>Commission tracking</li>
+                <li>Customer relationship tools</li>
+                <li>Performance analytics</li>
+              </ul>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-4">
+              <p className="text-xs text-yellow-800">
+                <strong>Already approved by admin?</strong> Click "Check Status" to refresh your account data.
+              </p>
+            </div>
+
+            <div className="pt-4">
+              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">
+                Status: {user?.status === "active" ? "Active - Verifying Approval" : "Pending Admin Approval"}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Check if agent is rejected
+  if (user?.status === "rejected") {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-2xl w-full">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+              <XCircle className="w-8 h-8 text-red-600" />
+            </div>
+            <CardTitle className="text-2xl text-red-700">Account Not Approved</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-[#3A3C40] text-lg">
+              Unfortunately, your agent application was not approved at this time.
+            </p>
+            <p className="text-[#3A3C40]">
+              If you believe this is an error or would like more information,
+              please contact our support team.
+            </p>
+            <div className="pt-4">
+              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300">
+                Status: Rejected
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Check if agent is suspended
+  if (user?.status === "suspended") {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-2xl w-full">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+              <AlertCircle className="w-8 h-8 text-gray-600" />
+            </div>
+            <CardTitle className="text-2xl text-gray-700">Account Suspended</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-[#3A3C40] text-lg">
+              Your agent account has been temporarily suspended.
+            </p>
+            <p className="text-[#3A3C40]">
+              Please contact the admin team for more information or to resolve this issue.
+            </p>
+            <div className="pt-4">
+              <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-300">
+                Status: Suspended
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8">
       {/* Header */}
@@ -134,6 +280,9 @@ export default function AgentDashboardPage() {
             <p className="text-sm sm:text-base text-[#3A3C40] mt-1">
               Welcome back, {user?.name}! Here's your performance overview.
             </p>
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 mt-2">
+              Status: Active & Approved
+            </Badge>
           </div>
           <div className="flex gap-2">
             <button className="px-4 py-2 bg-white border border-[#E7EAEF] rounded-xl text-sm font-medium text-[#3A3C40] hover:bg-[#FAFAFA] transition-colors">

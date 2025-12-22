@@ -1,13 +1,18 @@
 "use client";
 
 import { ReactNode } from "react";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 interface AdminGuardProps {
   children: ReactNode;
 }
 
 export function AdminGuard({ children }: AdminGuardProps) {
-  return <ProtectedRoute allowedRoles={["admin"]}>{children}</ProtectedRoute>;
+  /**
+   * IMPORTANT:
+   * Admin access is NOT granted via normal app auth (no signup/login for admin).
+   * `/admin/*` is protected by Next Middleware using an HttpOnly cookie (`admin_session`).
+   * If the cookie is missing/invalid, users are redirected server-side to `/admin-access`.
+   */
+  return <>{children}</>;
 }
 

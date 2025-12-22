@@ -12,6 +12,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { AnimatedSection } from "@/components/ui/animated-section";
+import { PageLoader } from "@/components/ui/loader";
 import { useProjects } from "@/hooks/use-projects";
 import { usePlots } from "@/hooks/use-plots";
 import { useUsers } from "@/hooks/use-users";
@@ -146,11 +147,7 @@ export default function AdminDashboardPage() {
   const totalPartners = users.filter((u) => u.role === "user").length; // Adjust based on your partner model
 
   if (loading || projectsLoading || plotsLoading || usersLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6139DB]"></div>
-      </div>
-    );
+    return <PageLoader text="Loading dashboard..." />;
   }
 
   return (

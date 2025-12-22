@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,61 +12,63 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AnimatedSection } from "@/components/ui/animated-section";
-import { Plus, DollarSign, CheckCircle2, Clock } from "lucide-react";
+import { PageLoader } from "@/components/ui/loader";
+import { Plus, DollarSign, CheckCircle2, Clock, Settings } from "lucide-react";
 import { StatCard } from "@/components/admin/stat-card";
-
-interface Commission {
-  id: string;
-  agent: string;
-  project: string;
-  plot: string;
-  saleAmount: string;
-  commissionRate: string;
-  commissionAmount: string;
-  status: "pending" | "approved" | "paid";
-  dueDate: string;
-}
-
-const mockCommissions: Commission[] = [
-  {
-    id: "COM-001",
-    agent: "Sara Malik",
-    project: "Emerald Enclave",
-    plot: "PL-202",
-    saleAmount: "PKR 18M",
-    commissionRate: "2.5%",
-    commissionAmount: "PKR 450K",
-    status: "pending",
-    dueDate: "2024-01-20",
-  },
-  {
-    id: "COM-002",
-    agent: "Bilal Riaz",
-    project: "Canal Heights",
-    plot: "PL-205",
-    saleAmount: "PKR 9.5M",
-    commissionRate: "3%",
-    commissionAmount: "PKR 285K",
-    status: "approved",
-    dueDate: "2024-01-25",
-  },
-  {
-    id: "COM-003",
-    agent: "Hassan Raza",
-    project: "Skyline Residency",
-    plot: "PL-311",
-    saleAmount: "PKR 9.5M",
-    commissionRate: "2%",
-    commissionAmount: "PKR 190K",
-    status: "paid",
-    dueDate: "2024-01-10",
-  },
-];
+import { useCommissions } from "@/hooks/use-commissions";
+import { commissionAPI } from "@/lib/api";
+import Link from "next/link";
 
 export default function CommissionsPage() {
-  const totalPending = "PKR 450K";
-  const totalApproved = "PKR 285K";
-  const totalPaid = "PKR 190K";
+  const { commissions, loading } = useCommissions();
+  const [stats, setStats] = useState({
+    pending: 0,
+    approved: 0,
+    paid: 0,
+  });
+
+  useEffect(() => {
+    if (commissions.length > 0) {
+      const pending = commissions
+        .filter((c) => c.status === "pending")
+        .reduce((sum, c) => sum + (c.amount || 0), 0);
+      const approved = commissions
+        .filter((c) => c.status === "approved")
+        .reduce((sum, c) => sum + (c.amount || 0), 0);
+      const paid = commissions
+        .filter((c) => c.status === "paid")
+        .reduce((sum, c) => sum + (c.amount || 0), 0);
+
+      setStats({ pending, approved, paid });
+    }
+  }, [commissions]);
+
+  const handleApprove = async (id: string) => {
+    try {
+      await commissionAPI.approve(id);
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to approve commission:", error);
+      alert("Failed to approve commission");
+    }
+  };
+
+  const handlePay = async (id: string) => {
+    const reference = prompt("Enter payment reference:");
+    if (!reference) return;
+
+    try {
+      await commissionAPI.pay(id, reference);
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to pay commission:", error);
+      alert("Failed to pay commission");
+    }
+  };
+
+  if (loading) {
+    return <PageLoader text="Loading commissions..." />;
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8">
@@ -76,10 +79,14 @@ export default function CommissionsPage() {
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#111111]">Commission Management</h1>
             <p className="text-[#3A3C40] mt-1">Manage agent commissions and disbursements</p>
           </div>
-          <Button className="bg-[#6139DB] hover:bg-[#6139DB]/90">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Commission Rule
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <Link href="/admin/commissions/rules">
+                <Settings className="h-4 w-4 mr-2" />
+                Commission Rules
+              </Link>
+            </Button>
+          </div>
         </div>
       </AnimatedSection>
 
@@ -87,19 +94,19 @@ export default function CommissionsPage() {
       <AnimatedSection variant="slideUp" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           title="Pending Commissions"
-          value={totalPending}
+          value={`PKR ${(stats.pending / 1000).toFixed(0)}K`}
           icon={Clock}
           iconBg="bg-yellow-100"
         />
         <StatCard
           title="Approved Commissions"
-          value={totalApproved}
+          value={`PKR ${(stats.approved / 1000).toFixed(0)}K`}
           icon={CheckCircle2}
           iconBg="bg-blue-100"
         />
         <StatCard
           title="Paid Commissions"
-          value={totalPaid}
+          value={`PKR ${(stats.paid / 1000).toFixed(0)}K`}
           icon={DollarSign}
           iconBg="bg-green-100"
         />
@@ -128,40 +135,82 @@ export default function CommissionsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockCommissions.map((commission) => (
-                  <TableRow key={commission.id}>
-                    <TableCell className="font-medium">{commission.id}</TableCell>
-                    <TableCell>{commission.agent}</TableCell>
-                    <TableCell>{commission.project}</TableCell>
-                    <TableCell>{commission.plot}</TableCell>
-                    <TableCell>{commission.saleAmount}</TableCell>
-                    <TableCell>{commission.commissionRate}</TableCell>
-                    <TableCell className="font-semibold text-[#6139DB]">
-                      {commission.commissionAmount}
-                    </TableCell>
-                    <TableCell>{commission.dueDate}</TableCell>
-                    <TableCell>
-                      {commission.status === "pending" ? (
-                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-yellow-100 text-yellow-800">
-                          Pending
-                        </span>
-                      ) : commission.status === "approved" ? (
-                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-blue-100 text-blue-800">
-                          Approved
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-green-100 text-green-800">
-                          Paid
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm">
-                        {commission.status === "pending" ? "Approve" : "View"}
-                      </Button>
-                    </TableCell>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center py-8">Loading commissions...</TableCell>
                   </TableRow>
-                ))}
+                ) : commissions.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center py-8 text-gray-500">No commissions found</TableCell>
+                  </TableRow>
+                ) : (
+                  commissions.map((commission) => (
+                    <TableRow key={commission._id}>
+                      <TableCell className="font-medium">#{commission._id.slice(-6)}</TableCell>
+                      <TableCell>{commission.agentId?.name || 'N/A'}</TableCell>
+                      <TableCell>{commission.projectId?.name || 'N/A'}</TableCell>
+                      <TableCell>{commission.plotId?.plotNo || 'N/A'}</TableCell>
+                      <TableCell>PKR {commission.saleAmount?.toLocaleString() || 0}</TableCell>
+                      <TableCell>{commission.commissionRate ? `${commission.commissionRate}%` : 'N/A'}</TableCell>
+                      <TableCell className="font-semibold text-[#6139DB]">
+                        PKR {commission.amount?.toLocaleString() || 0}
+                      </TableCell>
+                      <TableCell>
+                        {commission.dueDate 
+                          ? new Date(commission.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                          : 'N/A'
+                        }
+                      </TableCell>
+                      <TableCell>
+                        {commission.status === "pending" ? (
+                          <span className="px-2 py-1 rounded-lg text-xs font-medium bg-yellow-100 text-yellow-800">
+                            Pending
+                          </span>
+                        ) : commission.status === "approved" ? (
+                          <span className="px-2 py-1 rounded-lg text-xs font-medium bg-blue-100 text-blue-800">
+                            Approved
+                          </span>
+                        ) : commission.status === "paid" ? (
+                          <span className="px-2 py-1 rounded-lg text-xs font-medium bg-green-100 text-green-800">
+                            Paid
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 rounded-lg text-xs font-medium bg-gray-100 text-gray-800">
+                            {commission.status}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {commission.status === "pending" && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleApprove(commission._id)}
+                          >
+                            Approve
+                          </Button>
+                        )}
+                        {commission.status === "approved" && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              const reference = prompt("Enter payment reference:");
+                              if (reference) handlePay(commission._id, reference);
+                            }}
+                          >
+                            Mark Paid
+                          </Button>
+                        )}
+                        {commission.status === "paid" && (
+                          <Button variant="ghost" size="sm" disabled>
+                            Completed
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>

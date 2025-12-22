@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AnimatedSection } from "@/components/ui/animated-section";
+import { PageLoader } from "@/components/ui/loader";
 import { Plus, Search, Edit, MoreVertical, Building2, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useProjects } from "@/hooks/use-projects";
@@ -45,11 +46,7 @@ export default function ProjectsPage() {
   );
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6139DB]"></div>
-      </div>
-    );
+    return <PageLoader text="Loading projects..." />;
   }
 
   if (error) {

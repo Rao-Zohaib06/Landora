@@ -10,23 +10,38 @@ import { Button } from "@/components/ui/button";
 import { AnimatedSection } from "@/components/ui/animated-section";
 import { GradientText } from "@/components/ui/gradient-text";
 import { useAuth } from "@/contexts/AuthContext";
+import { validateLoginForm, getFieldError, ValidationError } from "@/lib/validations";
+import { AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const { login } = useAuth();
   const router = useRouter();
 
   const handleChange = (key: "email" | "password", value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setError("");
+    // Clear validation error for this field
+    setValidationErrors((prev) => prev.filter((err) => err.field !== key));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
+    setValidationErrors([]);
+
+    // Validate form
+    const validation = validateLoginForm(form);
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors);
+      setError("Please fix the errors below before submitting.");
+      return;
+    }
+
+    setLoading(true);
 
     try {
       await login(form.email, form.password);
@@ -55,7 +70,7 @@ export default function LoginPage() {
               Welcome back to <GradientText>Landora</GradientText>
             </CardTitle>
             <CardDescription className="text-[#3A3C40]">
-              Sign in to manage dashboards, properties, and agent activity.
+              Sign in to Landora.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 sm:space-y-6 p-6 sm:p-8 pt-0">
@@ -67,7 +82,14 @@ export default function LoginPage() {
                 placeholder="agent@landora.com"
                 value={form.email}
                 onChange={(e) => handleChange("email", e.target.value)}
+                className={getFieldError(validationErrors, "email") ? "border-red-500" : ""}
               />
+              {getFieldError(validationErrors, "email") && (
+                <p className="text-sm text-red-600 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {getFieldError(validationErrors, "email")}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -77,7 +99,14 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 value={form.password}
                 onChange={(e) => handleChange("password", e.target.value)}
+                className={getFieldError(validationErrors, "password") ? "border-red-500" : ""}
               />
+              {getFieldError(validationErrors, "password") && (
+                <p className="text-sm text-red-600 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {getFieldError(validationErrors, "password")}
+                </p>
+              )}
             </div>
             <div className="flex items-center justify-between text-sm text-[#3A3C40]">
               <label className="flex items-center gap-2">
