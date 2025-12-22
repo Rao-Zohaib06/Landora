@@ -5,7 +5,7 @@ import { AnimatedSection } from "@/components/ui/animated-section";
 import { GradientText } from "@/components/ui/gradient-text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Building2, Users, TrendingUp, Award, Target, Heart, Shield } from "lucide-react";
+import { Building2, Users, TrendingUp, Award, Target, Heart, Shield, Mail, Phone } from "lucide-react";
 import Link from "next/link";
 
 const values = [
@@ -182,6 +182,48 @@ export default function AboutPage() {
               </Card>
             </AnimatedSection>
           </div>
+        </Container>
+      </section>
+
+      {/* Developer Section */}
+      <section className="py-16 sm:py-20 md:py-24 bg-white">
+        <Container>
+          <AnimatedSection variant="slideUp" className="max-w-3xl mx-auto">
+            <div className="text-center mb-8">
+              <p className="text-sm uppercase tracking-[0.35em] text-[#3A3C40]/60 mb-4">
+                Developer
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-[#111111] mb-4">
+                Built by <GradientText>Rao Zohaib</GradientText>
+              </h2>
+            </div>
+            <Card className="border-[#E7EAEF]">
+              <CardContent className="p-8">
+                <div className="space-y-6">
+                  <p className="text-[#3A3C40] text-center leading-relaxed">
+                    Full-stack developer passionate about creating innovative real estate solutions 
+                    that make property management accessible and efficient for everyone.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+                    <a
+                      href="mailto:raozohaibofficial06@gmail.com"
+                      className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#6139DB] text-white rounded-lg hover:bg-[#6139DB]/90 transition-colors"
+                    >
+                      <Mail className="w-4 h-4" />
+                      Email Me
+                    </a>
+                    <a
+                      href="tel:+923037550673"
+                      className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#E7EAEF] text-[#111111] rounded-lg hover:border-[#6139DB] hover:text-[#6139DB] transition-colors"
+                    >
+                      <Phone className="w-4 h-4" />
+                      Call: +92 303 7550673
+                    </a>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </AnimatedSection>
         </Container>
       </section>
 

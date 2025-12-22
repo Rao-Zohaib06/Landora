@@ -15,7 +15,7 @@
     "property-management",
     "api"
   ],
-  "author": "Landora Team",
+  "author": "Rao Zohaib <raozohaibofficial06@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "@radix-ui/react-toast": "^1.2.15",

@@ -65,13 +65,13 @@ export default function ContactPage() {
     {
       icon: Phone,
       title: "Phone",
-      details: ["+92 300 1234567", "+92 321 7654321"],
+      details: ["+92 303 7550673"],
       subtitle: "Mon-Sat 9AM-6PM",
     },
     {
       icon: Mail,
       title: "Email",
-      details: ["info@landora.com", "support@landora.com"],
+      details: ["raozohaibofficial06@gmail.com"],
       subtitle: "24/7 Support",
     },
     {
