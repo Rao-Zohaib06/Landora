@@ -35,8 +35,8 @@ export function useLeads(params?: { agentId?: string; status?: string }) {
       const response = await api.get(`/api/agents/leads?${queryParams.toString()}`);
       setLeads(response.data.data || []);
       setError(null);
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to fetch leads");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch leads");
       setLeads([]);
     } finally {
       setLoading(false);
@@ -47,8 +47,8 @@ export function useLeads(params?: { agentId?: string; status?: string }) {
     try {
       await api.put(`/api/agents/leads/${id}`, data);
       await fetchLeads();
-    } catch (err: any) {
-      throw new Error(err.response?.data?.message || "Failed to update lead");
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : "Failed to update lead");
     }
   };
 
@@ -56,13 +56,14 @@ export function useLeads(params?: { agentId?: string; status?: string }) {
     try {
       await api.delete(`/api/agents/leads/${id}`);
       await fetchLeads();
-    } catch (err: any) {
-      throw new Error(err.response?.data?.message || "Failed to delete lead");
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : "Failed to delete lead");
     }
   };
 
   useEffect(() => {
     fetchLeads();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params?.agentId, params?.status]);
 
   return {

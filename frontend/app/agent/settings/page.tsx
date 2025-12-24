@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
 import { Label } from "@/components/ui/label";
 import {
   Card,
@@ -17,10 +17,7 @@ import {
   Mail,
   Shield,
   Eye,
-  Moon,
-  Globe,
   Save,
-  CheckCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 

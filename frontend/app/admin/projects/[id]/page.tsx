@@ -1,25 +1,28 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ButtonLoader } from "@/components/ui/loader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AnimatedSection } from "@/components/ui/animated-section";
-import { ArrowLeft, Upload, X, Image as ImageIcon } from "lucide-react";
+import { PageLoader, ButtonLoader } from "@/components/ui/loader";
+import { ArrowLeft, Save, Upload, X, Trash2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { projectAPI, fileAPI } from "@/lib/api";
 
-export default function NewProjectPage() {
+export default function EditProjectPage() {
+  const params = useParams();
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<{ url: string; type: string; caption?: string }[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     code: "",
@@ -37,6 +40,43 @@ export default function NewProjectPage() {
     pricePerMarla: "",
   });
 
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        const response = await projectAPI.getById(params.id as string);
+        const project = response.data.data.project;
+
+        setFormData({
+          name: project.name || "",
+          code: project.code || "",
+          city: project.location?.city || "",
+          area: project.location?.area || "",
+          address: project.location?.address || "",
+          totalAreaMarla: project.totalAreaMarla || "",
+          status: project.status || "planning",
+          description: project.details?.description || "",
+          developer: project.details?.developer || "",
+          features: project.details?.features?.join(", ") || "",
+          amenities: project.details?.amenities?.join(", ") || "",
+          minPrice: project.pricing?.minPrice || "",
+          maxPrice: project.pricing?.maxPrice || "",
+          pricePerMarla: project.pricing?.pricePerMarla || "",
+        });
+
+        setExistingImages(project.images || []);
+      } catch (error) {
+        console.error("Failed to fetch project:", error);
+        alert("Failed to load project");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (params.id) {
+      fetchProject();
+    }
+  }, [params.id]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
@@ -49,9 +89,7 @@ export default function NewProjectPage() {
     if (!files) return;
 
     const fileArray = Array.from(files);
-    const validImages = fileArray.filter(file => 
-      file.type.startsWith('image/')
-    );
+    const validImages = fileArray.filter(file => file.type.startsWith('image/'));
 
     if (validImages.length !== fileArray.length) {
       alert("Some files were not images and have been skipped.");
@@ -59,7 +97,6 @@ export default function NewProjectPage() {
 
     setSelectedImages(prev => [...prev, ...validImages]);
 
-    // Create preview URLs
     validImages.forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -69,9 +106,13 @@ export default function NewProjectPage() {
     });
   };
 
-  const removeImage = (index: number) => {
+  const removeNewImage = (index: number) => {
     setSelectedImages(prev => prev.filter((_, i) => i !== index));
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingImage = (index: number) => {
+    setExistingImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const uploadImages = async (): Promise<string[]> => {
@@ -91,7 +132,7 @@ export default function NewProjectPage() {
         }
       }
       return uploadedUrls;
-    } catch (error: unknown) {
+    } catch (error) {
       console.error("Failed to upload images:", error);
       throw new Error("Failed to upload images");
     } finally {
@@ -101,18 +142,21 @@ export default function NewProjectPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate that at least one image is selected
-    if (selectedImages.length === 0) {
-      alert("Please upload at least one image for the project to be displayed on the main website.");
-      return;
-    }
-
-    setLoading(true);
+    setSaving(true);
 
     try {
-      // Upload images first
-      const imageUrls = await uploadImages();
+      // Upload new images
+      const newImageUrls = await uploadImages();
+
+      // Combine existing and new images
+      const allImages = [
+        ...existingImages,
+        ...newImageUrls.map((url, index) => ({
+          url,
+          type: existingImages.length === 0 && index === 0 ? 'main' : 'gallery',
+          caption: `${formData.name} - Image ${existingImages.length + index + 1}`
+        }))
+      ];
 
       const projectData = {
         name: formData.name,
@@ -135,42 +179,61 @@ export default function NewProjectPage() {
           maxPrice: formData.maxPrice ? Number(formData.maxPrice) : undefined,
           pricePerMarla: formData.pricePerMarla ? Number(formData.pricePerMarla) : undefined,
         },
-        images: imageUrls.map((url, index) => ({
-          url,
-          type: index === 0 ? 'main' : 'gallery',
-          caption: `${formData.name} - Image ${index + 1}`
-        })),
-        isActive: true, // Ensure project is active and visible on website
+        images: allImages,
       };
 
-      await projectAPI.create(projectData);
-      alert("Project created successfully!");
+      await projectAPI.update(params.id as string, projectData);
+      alert("Project updated successfully!");
       router.push("/admin/projects");
-    } catch (error: unknown) {
-      console.error("Failed to create project:", error);
-      const errorMessage = error && typeof error === 'object' && 'response' in error 
-        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message 
-        : undefined;
-      alert(errorMessage || "Failed to create project. Please try again.");
+    } catch (error) {
+      console.error("Failed to update project:", error);
+      const message = error instanceof Error && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data ? String(error.response.data.message) : "Failed to update project. Please try again.";
+      alert(message);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      await projectAPI.delete(params.id as string);
+      alert("Project deleted successfully!");
+      router.push("/admin/projects");
+    } catch (error) {
+      console.error("Failed to delete project:", error);
+      const message = error instanceof Error && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data ? String(error.response.data.message) : "Failed to delete project. Please try again.";
+      alert(message);
+    }
+  };
+
+  if (loading) {
+    return <PageLoader text="Loading project..." />;
+  }
 
   return (
     <div className="space-y-6">
       <AnimatedSection variant="slideUp">
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/admin/projects">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Projects
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-[#111111]">Create New Project</h1>
-            <p className="text-[#3A3C40] mt-1">Add a new real estate project to the system</p>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/admin/projects">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Projects
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-[#111111]">Edit Project</h1>
+              <p className="text-[#3A3C40] mt-1">Update project details</p>
+            </div>
           </div>
+          <Button variant="destructive" onClick={handleDelete}>
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete Project
+          </Button>
         </div>
       </AnimatedSection>
 
@@ -395,12 +458,46 @@ export default function NewProjectPage() {
         <AnimatedSection variant="slideUp">
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Project Images *</CardTitle>
-              <CardDescription>Upload images to showcase on the main site (first image will be the main image) - Required for website display</CardDescription>
+              <CardTitle>Project Images</CardTitle>
+              <CardDescription>Manage project images</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Existing Images */}
+              {existingImages.length > 0 && (
+                <div>
+                  <Label>Current Images</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
+                    {existingImages.map((image, index) => (
+                      <div key={index} className="relative group">
+                        <div className="relative aspect-square rounded-lg overflow-hidden border-2 border-[#E7EAEF]">
+                          <Image
+                            src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${image.url}`}
+                            alt={`Image ${index + 1}`}
+                            fill
+                            className="object-cover"
+                          />
+                          {image.type === 'main' && (
+                            <div className="absolute top-2 left-2 bg-[#6139DB] text-white text-xs px-2 py-1 rounded z-10">
+                              Main
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeExistingImage(index)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Add New Images */}
               <div className="space-y-2">
-                <Label htmlFor="images">Upload Images *</Label>
+                <Label htmlFor="images">Add New Images</Label>
                 <div className="flex items-center gap-4">
                   <Button
                     type="button"
@@ -420,31 +517,26 @@ export default function NewProjectPage() {
                     className="hidden"
                   />
                   <span className="text-sm text-[#3A3C40]">
-                    {selectedImages.length} {selectedImages.length === 1 ? 'image' : 'images'} selected
+                    {selectedImages.length} new {selectedImages.length === 1 ? 'image' : 'images'} selected
                   </span>
                 </div>
               </div>
 
               {imagePreviews.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {imagePreviews.map((preview, index) => (
                     <div key={index} className="relative group">
                       <div className="relative aspect-square rounded-lg overflow-hidden border-2 border-[#E7EAEF]">
                         <Image
                           src={preview}
-                          alt={`Preview ${index + 1}`}
+                          alt={`New Preview ${index + 1}`}
                           fill
                           className="object-cover"
                         />
-                        {index === 0 && (
-                          <div className="absolute top-2 left-2 bg-[#6139DB] text-white text-xs px-2 py-1 rounded">
-                            Main
-                          </div>
-                        )}
                       </div>
                       <button
                         type="button"
-                        onClick={() => removeImage(index)}
+                        onClick={() => removeNewImage(index)}
                         className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <X className="h-4 w-4" />
@@ -454,29 +546,21 @@ export default function NewProjectPage() {
                 </div>
               )}
 
-              {selectedImages.length === 0 && (
-                <div className="border-2 border-dashed border-[#E7EAEF] rounded-lg p-8 text-center">
-                  <ImageIcon className="h-12 w-12 mx-auto text-[#9FA6B4] mb-2" />
-                  <p className="text-sm text-[#3A3C40]">No images selected</p>
-                  <p className="text-xs text-[#9FA6B4] mt-1">Choose images to display your project</p>
-                </div>
-              )}
-
               {/* Submit Buttons */}
               <div className="flex gap-4 justify-end pt-6 border-t border-[#E7EAEF] mt-6">
-                <Button type="button" variant="outline" asChild disabled={loading || uploadingImages}>
+                <Button type="button" variant="outline" asChild disabled={saving || uploadingImages}>
                   <Link href="/admin/projects">Cancel</Link>
                 </Button>
-                <Button type="submit" className="bg-[#6139DB] hover:bg-[#6139DB]/90" disabled={loading || uploadingImages}>
-                  {loading || uploadingImages ? (
+                <Button type="submit" className="bg-[#6139DB] hover:bg-[#6139DB]/90" disabled={saving || uploadingImages}>
+                  {saving || uploadingImages ? (
                     <>
                       <ButtonLoader className="mr-2" />
-                      {uploadingImages ? 'Uploading Images...' : 'Creating Project...'}
+                      {uploadingImages ? 'Uploading Images...' : 'Saving...'}
                     </>
                   ) : (
                     <>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Project
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Changes
                     </>
                   )}
                 </Button>

@@ -69,8 +69,8 @@ export default function HomePage() {
     const fetchFeaturedProjects = async () => {
       try {
         setError(null);
-        // Fetch active projects
-        const response = await projectAPI.getAll({ status: "ongoing", limit: 6 });
+        // Fetch active projects (all statuses, not just ongoing)
+        const response = await projectAPI.getAll({ limit: 6 });
         const projects = response.data.data.projects.slice(0, 6);
         setFeaturedProjects(projects);
 

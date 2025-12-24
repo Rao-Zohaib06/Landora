@@ -44,6 +44,7 @@ export default function RentPage() {
   const [areaUnit, setAreaUnit] = useState<AreaUnit>("marla");
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
   const [showAreaUnitDropdown, setShowAreaUnitDropdown] = useState(false);
+  const [cityDropdownWidth, setCityDropdownWidth] = useState(0);
   
   const cityDropdownRef = useRef<HTMLDivElement>(null);
   const currencyDropdownRef = useRef<HTMLDivElement>(null);
@@ -65,6 +66,13 @@ export default function RentPage() {
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Measure city dropdown width
+  useEffect(() => {
+    if (cityDropdownRef.current) {
+      setCityDropdownWidth(cityDropdownRef.current.offsetWidth);
+    }
   }, []);
 
   const handleSearch = (e?: React.FormEvent) => {
@@ -176,7 +184,7 @@ export default function RentPage() {
                         <ChevronDown className={`h-5 w-5 text-[#3A3C40] transition-transform ${showCityDropdown ? 'rotate-180' : ''}`} />
                       </button>
                       {showCityDropdown && (
-                        <div className="fixed z-[9999] mt-2 bg-white rounded-xl shadow-2xl border border-[#E7EAEF] max-h-64 overflow-y-auto" style={{ width: cityDropdownRef.current?.offsetWidth }}>
+                        <div className="fixed z-[9999] mt-2 bg-white rounded-xl shadow-2xl border border-[#E7EAEF] max-h-64 overflow-y-auto" style={{ width: cityDropdownWidth }}>
                           {cities.map((c) => (
                             <button
                               key={c}

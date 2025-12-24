@@ -135,6 +135,14 @@ export const projectAPI = {
     limit?: number;
   }) => api.get("/projects", { params }),
 
+  // Admin endpoint to get all projects including inactive
+  getAllForAdmin: (params?: {
+    status?: string;
+    city?: string;
+    page?: number;
+    limit?: number;
+  }) => api.get("/projects/admin/all", { params }),
+
   getById: (id: string) => api.get(`/projects/${id}`),
 
   create: (data: any) => api.post("/projects", data),

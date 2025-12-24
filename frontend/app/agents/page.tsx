@@ -7,8 +7,8 @@ import { GradientText } from "@/components/ui/gradient-text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PageLoader, Loader } from "@/components/ui/loader";
-import { Search, Mail, Phone, MapPin, Building2, Star } from "lucide-react";
+import { PageLoader } from "@/components/ui/loader";
+import { Search, Mail, Phone, Building2 } from "lucide-react";
 import { userAPI } from "@/lib/api";
 import Link from "next/link";
 
@@ -48,7 +48,7 @@ export default function AgentsPage() {
         
         setAgents(activeAgents);
         setFilteredAgents(activeAgents);
-      } catch (err: any) {
+      } catch (err) {
         console.error("Failed to fetch agents:", err);
         setError("Unable to load agents. Please try again later.");
         setAgents([]);

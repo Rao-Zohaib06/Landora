@@ -54,7 +54,7 @@ export default function ContactPage() {
       });
       
       setTimeout(() => setSuccess(false), 5000);
-    } catch (err) {
+    } catch {
       setError("Failed to send message. Please try again.");
     } finally {
       setLoading(false);
@@ -101,7 +101,7 @@ export default function ContactPage() {
               Contact <GradientText>Landora</GradientText>
             </h1>
             <p className="text-lg text-white/80">
-              Have questions? We're here to help you find your perfect property
+              Have questions? We&apos;re here to help you find your perfect property
             </p>
           </AnimatedSection>
         </Container>
@@ -143,7 +143,7 @@ export default function ContactPage() {
                 <CardHeader>
                   <CardTitle className="text-2xl">Send us a Message</CardTitle>
                   <p className="text-[#3A3C40]">
-                    Fill out the form below and we'll get back to you as soon as possible
+                    Fill out the form below and we&apos;ll get back to you as soon as possible
                   </p>
                 </CardHeader>
                 <CardContent>
@@ -220,7 +220,7 @@ export default function ContactPage() {
 
                     {success && (
                       <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-600">
-                        Thank you! Your message has been sent successfully. We'll get back to you soon.
+                        Thank you! Your message has been sent successfully. We&apos;ll get back to you soon.
                       </div>
                     )}
 

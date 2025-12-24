@@ -48,7 +48,8 @@ export function useProjects(params?: {
     const fetchProjects = async () => {
       try {
         setLoading(true);
-        const response = await projectAPI.getAll(params);
+        // Use admin endpoint that includes all projects (including inactive)
+        const response = await projectAPI.getAllForAdmin(params);
         setProjects(response.data.data.projects);
         setPagination(response.data.data.pagination);
         setError(null);

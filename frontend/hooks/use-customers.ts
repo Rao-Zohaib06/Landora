@@ -38,10 +38,10 @@ export function useCustomers(params?: { agentId?: string }) {
       // Fetch all users and filter by role buyer on frontend for now
       const response = await api.get(`/api/users?${queryParams.toString()}`);
       const allUsers = response.data.data || [];
-      setCustomers(allUsers.filter((u: any) => u.role === 'buyer'));
+      setCustomers(allUsers.filter((u: { role: string }) => u.role === 'buyer'));
       setError(null);
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to fetch customers");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch customers");
       setCustomers([]);
     } finally {
       setLoading(false);
@@ -52,8 +52,8 @@ export function useCustomers(params?: { agentId?: string }) {
     try {
       await api.post("/api/users", { ...data, role: "buyer" });
       await fetchCustomers();
-    } catch (err: any) {
-      throw new Error(err.response?.data?.message || "Failed to add customer");
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : "Failed to add customer");
     }
   };
 
@@ -61,13 +61,14 @@ export function useCustomers(params?: { agentId?: string }) {
     try {
       await api.put(`/api/users/${id}`, data);
       await fetchCustomers();
-    } catch (err: any) {
-      throw new Error(err.response?.data?.message || "Failed to update customer");
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : "Failed to update customer");
     }
   };
 
   useEffect(() => {
     fetchCustomers();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params?.agentId]);
 
   return {

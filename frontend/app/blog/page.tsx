@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Container } from "@/components/layout/container";
 import { AnimatedSection } from "@/components/ui/animated-section";
 import { GradientText } from "@/components/ui/gradient-text";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar, User, Tag, Search, Clock, ArrowRight } from "lucide-react";
@@ -109,8 +110,8 @@ export default function BlogPage() {
     }, 800);
   }, []);
 
-  // Filter posts
-  useEffect(() => {
+  // Filter posts using useMemo to avoid cascading renders
+  const filteredPostsMemo = useMemo(() => {
     let filtered = posts;
 
     if (selectedCategory !== "All") {
@@ -125,8 +126,13 @@ export default function BlogPage() {
       );
     }
 
-    setFilteredPosts(filtered);
+    return filtered;
   }, [searchQuery, selectedCategory, posts]);
+
+  // Update filtered posts when memo changes
+  useEffect(() => {
+    setFilteredPosts(filteredPostsMemo);
+  }, [filteredPostsMemo]);
 
   const featuredPosts = posts.filter((post) => post.featured);
 
@@ -143,7 +149,7 @@ export default function BlogPage() {
               Landora <GradientText>Blog</GradientText>
             </h1>
             <p className="text-lg text-white/80">
-              Stay informed with the latest news, trends, and expert advice in Pakistan's real estate market
+              Stay informed with the latest news, trends, and expert advice in Pakistan&apos;s real estate market
             </p>
           </AnimatedSection>
         </Container>
@@ -201,11 +207,12 @@ export default function BlogPage() {
                 <AnimatedSection key={post.id} variant="slideUp" delay={index * 0.1}>
                   <Link href={`/blog/${post.id}`}>
                     <Card className="group cursor-pointer border-[#E7EAEF] hover:shadow-lg transition-all overflow-hidden h-full">
-                      <div className="aspect-video bg-gray-200 overflow-hidden">
-                        <img
+                      <div className="aspect-video bg-gray-200 overflow-hidden relative">
+                        <Image
                           src={post.image}
                           alt={post.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          fill
+                          className="object-cover group-hover:scale-110 transition-transform duration-300"
                         />
                       </div>
                       <CardContent className="p-6">
@@ -279,7 +286,7 @@ export default function BlogPage() {
                 <Search className="w-16 h-16 text-[#3A3C40]/30 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-[#111111] mb-2">No Articles Found</h3>
                 <p className="text-[#3A3C40] mb-6">
-                  Try adjusting your search or filter to find what you're looking for
+                  Try adjusting your search or filter to find what you&apos;re looking for
                 </p>
                 <Button
                   onClick={() => {
@@ -298,11 +305,12 @@ export default function BlogPage() {
                 <AnimatedSection key={post.id} variant="slideUp" delay={index * 0.05}>
                   <Link href={`/blog/${post.id}`}>
                     <Card className="group cursor-pointer border-[#E7EAEF] hover:shadow-lg transition-all overflow-hidden h-full">
-                      <div className="aspect-video bg-gray-200 overflow-hidden">
-                        <img
+                      <div className="aspect-video bg-gray-200 overflow-hidden relative">
+                        <Image
                           src={post.image}
                           alt={post.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          fill
+                          className="object-cover group-hover:scale-110 transition-transform duration-300"
                         />
                       </div>
                       <CardContent className="p-6">

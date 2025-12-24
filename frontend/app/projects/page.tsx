@@ -37,7 +37,7 @@ const areaUnits: { value: AreaUnit; label: string }[] = [
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const [city, setCity] = useState("Islamabad");
+  const [city, setCity] = useState(""); // Start with no city filter to show all projects
   const [location, setLocation] = useState("");
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [currency, setCurrency] = useState<Currency>("PKR");
@@ -67,11 +67,21 @@ export default function ProjectsPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Auto-navigate to properties page with projects filter on mount
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set("type", "projects");
+    params.set("currency", currency);
+    params.set("areaUnit", areaUnit);
+    router.push(`/properties?${params.toString()}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array = run once on mount
+
   const handleSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const params = new URLSearchParams();
     params.set("type", "projects");
-    params.set("city", city);
+    if (city) params.set("city", city); // Only include city if selected
     if (location) params.set("location", location);
     params.set("currency", currency);
     params.set("areaUnit", areaUnit);
@@ -79,7 +89,7 @@ export default function ProjectsPage() {
   };
 
   const handleReset = () => {
-    setCity("Islamabad");
+    setCity(""); // Reset to no city filter
     setLocation("");
     setCurrency("PKR");
     setAreaUnit("marla");
@@ -172,11 +182,23 @@ export default function ProjectsPage() {
                         }}
                         className="w-full h-11 bg-white rounded-xl px-4 text-left text-base text-[#111111] font-medium flex items-center justify-between hover:bg-[#FAFAFA] transition-colors"
                       >
-                        <span>{city}</span>
+                        <span className={city ? "text-[#111111]" : "text-[#9CA3AF]"}>{city || "All Cities"}</span>
                         <ChevronDown className={`h-5 w-5 text-[#3A3C40] transition-transform ${showCityDropdown ? 'rotate-180' : ''}`} />
                       </button>
                       {showCityDropdown && (
-                        <div className="fixed z-[9999] mt-2 bg-white rounded-xl shadow-2xl border border-[#E7EAEF] max-h-64 overflow-y-auto" style={{ width: cityDropdownRef.current?.offsetWidth }}>
+                        <div className="absolute z-[9999] mt-2 w-full bg-white rounded-xl shadow-2xl border border-[#E7EAEF] max-h-64 overflow-y-auto">
+                          {/* All Cities option */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCitySelect("");
+                            }}
+                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-[#FAFAFA] transition-colors flex items-center justify-between border-b border-[#E7EAEF]"
+                          >
+                            <span className="text-[#111111] font-medium">All Cities</span>
+                            {!city && <Check className="h-4 w-4 text-[#6139DB]" />}
+                          </button>
                           {cities.map((c) => (
                             <button
                               key={c}
@@ -238,7 +260,7 @@ export default function ProjectsPage() {
                     <ChevronDown className="h-4 w-4" />
                   </button>
                   {showCurrencyDropdown && (
-                    <div className="fixed z-[9999] mt-2 bg-white rounded-lg shadow-xl border border-[#E7EAEF] min-w-[150px]">
+                    <div className="absolute z-[9999] mt-2 bg-white rounded-lg shadow-xl border border-[#E7EAEF] min-w-[150px]">
                       {currencies.map((curr) => (
                         <button
                           key={curr.code}
@@ -273,7 +295,7 @@ export default function ProjectsPage() {
                     <ChevronDown className="h-4 w-4" />
                   </button>
                   {showAreaUnitDropdown && (
-                    <div className="fixed z-[9999] mt-2 bg-white rounded-lg shadow-xl border border-[#E7EAEF] min-w-[180px]">
+                    <div className="absolute z-[9999] mt-2 bg-white rounded-lg shadow-xl border border-[#E7EAEF] min-w-[180px]">
                       {areaUnits.map((unit) => (
                         <button
                           key={unit.value}

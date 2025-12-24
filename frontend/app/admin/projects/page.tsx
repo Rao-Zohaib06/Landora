@@ -141,8 +141,10 @@ export default function ProjectsPage() {
                   <Button variant="outline" className="flex-1" asChild>
                     <Link href={`/admin/projects/${project._id}`}>View Details</Link>
                   </Button>
-                  <Button variant="ghost" size="icon">
-                    <Edit className="h-4 w-4" />
+                  <Button variant="ghost" size="icon" asChild>
+                    <Link href={`/admin/projects/${project._id}`}>
+                      <Edit className="h-4 w-4" />
+                    </Link>
                   </Button>
                 </div>
               </CardContent>

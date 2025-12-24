@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Container } from "@/components/layout/container";
 import { AnimatedSection } from "@/components/ui/animated-section";
-import { GradientText } from "@/components/ui/gradient-text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +21,6 @@ import {
   ChevronLeft,
   AlertCircle,
   Building2,
-  DollarSign,
 } from "lucide-react";
 import { userAPI, listingAPI } from "@/lib/api";
 
@@ -85,6 +84,7 @@ export default function AgentDetailPage() {
       fetchAgentDetails();
       fetchAgentProperties();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentId]);
 
   const fetchAgentDetails = async () => {
@@ -93,8 +93,8 @@ export default function AgentDetailPage() {
       setError("");
       const response = await userAPI.getById(agentId);
       setAgent(response.data);
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to load agent details");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load agent details");
     } finally {
       setLoading(false);
     }
@@ -103,7 +103,7 @@ export default function AgentDetailPage() {
   const fetchAgentProperties = async () => {
     try {
       setLoadingProperties(true);
-      const response = await listingAPI.getAll({ agent: agentId });
+      const response = await listingAPI.getAll({ agentId: agentId });
       setProperties(response.data?.listings || []);
     } catch (err) {
       console.error("Failed to load agent properties", err);
@@ -387,12 +387,13 @@ export default function AgentDetailPage() {
                         {properties.slice(0, 6).map((property) => (
                           <Link key={property._id} href={`/properties/${property._id}`}>
                             <div className="group flex gap-4 p-4 border border-[#E7EAEF] rounded-lg hover:shadow-md transition-shadow">
-                              <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                              <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0 relative">
                                 {property.images[0] ? (
-                                  <img
+                                  <Image
                                     src={property.images[0]}
                                     alt={property.title}
-                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                                    fill
+                                    className="object-cover group-hover:scale-110 transition-transform"
                                   />
                                 ) : (
                                   <Building2 className="w-full h-full p-4 text-[#3A3C40]/30" />

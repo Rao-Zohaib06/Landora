@@ -105,7 +105,8 @@ export default function PropertiesPage() {
       setError(null);
       try {
         if (propertyType === "projects") {
-          const res = await projectAPI.getAll(city ? { city } : undefined);
+          // Fetch all projects without city filter, we'll filter client-side
+          const res = await projectAPI.getAll();
           setProjects(res.data.data.projects || res.data.data || []);
         } else {
           const res = await listingAPI.getAll(city ? { city } : undefined);
@@ -234,7 +235,23 @@ export default function PropertiesPage() {
         ) : showProjects ? (
           <AnimatedSection variant="slideUp" className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {filteredProjects.map((project) => (
-              <Card key={project._id} className="flex flex-col bg-white border border-[#E7EAEF] rounded-2xl">
+              <Card key={project._id} className="flex flex-col bg-white border border-[#E7EAEF] rounded-2xl overflow-hidden">
+                {/* Project Image */}
+                {project.images && project.images.length > 0 && (
+                  <div className="relative h-48 w-full">
+                    <img
+                      src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${project.images.find((img: any) => img.type === 'main')?.url || project.images[0]?.url}`}
+                      alt={project.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800';
+                      }}
+                    />
+                    <div className="absolute top-2 right-2 bg-[#6139DB] text-white text-xs px-2 py-1 rounded">
+                      {project.status || 'planning'}
+                    </div>
+                  </div>
+                )}
                 <CardHeader>
                   <p className="text-xs uppercase tracking-widest text-[#3A3C40]/60">
                     {project.code || project._id}
@@ -269,9 +286,6 @@ export default function PropertiesPage() {
                     </p>
                   )}
                   <p>{project.details?.description || "Project details coming soon."}</p>
-                  <p className="text-sm text-[#3A3C40]">
-                    Status: <span className="font-semibold text-[#111111]">{project.status || "planning"}</span>
-                  </p>
                   <Button variant="gradient" className="mt-auto" asChild>
                     <Link href={`/projects/${project._id}`}>View details</Link>
                   </Button>

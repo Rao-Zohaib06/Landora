@@ -7,7 +7,45 @@ export const getProjects = async (req, res, next) => {
   try {
     const { status, city, page = 1, limit = 20 } = req.query;
 
-    const query = {};
+    const query = { isActive: true }; // Only show active projects on public site
+    if (status) query.status = status;
+    if (city) query['location.city'] = city;
+
+    const skip = (page - 1) * limit;
+
+    const projects = await Project.find(query)
+      .populate('createdBy', 'name email')
+      .skip(skip)
+      .limit(Number(limit))
+      .sort({ createdAt: -1 });
+
+    const total = await Project.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: {
+        projects,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get all projects for admin (including inactive)
+// @route   GET /api/projects/admin/all
+// @access  Private/Admin
+export const getAllProjectsAdmin = async (req, res, next) => {
+  try {
+    const { status, city, page = 1, limit = 20 } = req.query;
+
+    const query = {}; // No isActive filter for admin
     if (status) query.status = status;
     if (city) query['location.city'] = city;
 
