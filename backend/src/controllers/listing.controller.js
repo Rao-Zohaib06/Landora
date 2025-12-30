@@ -15,6 +15,8 @@ export const getListings = async (req, res, next) => {
       minPrice,
       maxPrice,
       city,
+      q,
+      location,
       page = 1,
       limit = 20,
     } = req.query;
@@ -25,6 +27,19 @@ export const getListings = async (req, res, next) => {
     if (projectId) query.projectId = projectId;
     if (status) query.status = status;
     if (city) query['location.city'] = city;
+    // Text search across common listing fields. Frontend currently sends `location` from the hero,
+    // so we also accept it as a synonym for `q` to avoid breaking changes.
+    const searchText = (q || location || '').toString().trim();
+    if (searchText) {
+      const regex = new RegExp(searchText, 'i');
+      query.$or = [
+        { title: regex },
+        { description: regex },
+        { 'location.city': regex },
+        { 'location.area': regex },
+        { 'location.address': regex },
+      ];
+    }
     if (minPrice || maxPrice) {
       query.price = {};
       if (minPrice) query.price.$gte = Number(minPrice);
