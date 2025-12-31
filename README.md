@@ -16,12 +16,17 @@ Landora is a full-stack real estate management platform featuring:
 - Installment and payment tracking
 - Project and plot management
 
-## 👨‍💻 Developer
+## 👨‍💻 Developers
 
 **Rao Zohaib**
 - Email: raozohaibofficial06@gmail.com
 - Phone: +92 303 7550673
 - GitHub: [Rao-Zohaib06](https://github.com/Rao-Zohaib06)
+
+**Muhammad Ihtisham Sajjad**
+- Email: ihtishamsajjad670@gmail.com
+- Phone: +92 308 9005419
+- GitHub: [ihtisam535](https://github.com/ihtisham535)
 
 ## 🚀 Tech Stack
 
