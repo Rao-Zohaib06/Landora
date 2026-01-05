@@ -50,16 +50,16 @@ export function Footer() {
             </p>
             <div className="flex flex-col gap-2 text-sm text-white/60">
               <a
-                href="mailto:raozohaibofficial06@gmail.com"
+                href="mailto:landoraoffical@gmail.com"
                 className="hover:text-white transition-colors"
               >
-                raozohaibofficial06@gmail.com
+                landoraoffical@gmail.com
               </a>
               <a
-                href="tel:+923037550673"
+                href="tel:+923037543005"
                 className="hover:text-white transition-colors"
               >
-                +92 303 7550673
+                +92 303 6543005
               </a>
             </div>
           </div>
@@ -126,7 +126,7 @@ export function Footer() {
         <div className="mt-12 pt-8 border-t border-white/10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-white/60">
-              © {currentYear} Landora. Developed by Rao Zohaib. All rights reserved.
+              © {currentYear} Landora. Developed by Landora. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
               {footerLinks.legal.map((link) => (

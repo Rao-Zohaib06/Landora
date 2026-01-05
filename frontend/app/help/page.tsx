@@ -147,14 +147,14 @@ const quickLinks = [
   {
     icon: Phone,
     title: "Call Us",
-    description: "+92 303 7550673",
+    description: "+92 303 6543005",
     action: "Call Now",
     color: "green"
   },
   {
     icon: Mail,
     title: "Email Support",
-    description: "raozohaibofficial06@gmail.com",
+    description: "landoraoffical@gmail.com",
     action: "Send Email",
     color: "purple"
   },

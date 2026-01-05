@@ -65,13 +65,13 @@ export default function ContactPage() {
     {
       icon: Phone,
       title: "Phone",
-      details: ["+92 303 7550673"],
+      details: ["+92 303 6543005"],
       subtitle: "Mon-Sat 9AM-6PM",
     },
     {
       icon: Mail,
       title: "Email",
-      details: ["raozohaibofficial06@gmail.com"],
+      details: ["lanoraoffical@gmail.com"],
       subtitle: "24/7 Support",
     },
     {

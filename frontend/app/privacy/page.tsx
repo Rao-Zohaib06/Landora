@@ -185,12 +185,12 @@ export default function PrivacyPolicyPage() {
                 <div className="bg-[#6139DB]/5 border-l-4 border-[#6139DB] p-4 rounded">
                   <p className="text-sm text-[#3A3C40]">
                     <strong>Contact Us:</strong> If you have questions about this Privacy Policy, please contact us at{" "}
-                    <a href="mailto:raozohaibofficial06@gmail.com" className="text-[#6139DB] hover:underline">
-                      raozohaibofficial06@gmail.com
+                    <a href="mailto:landoraoffical@gmail.com" className="text-[#6139DB] hover:underline">
+                      landoraoffical@gmail.com
                     </a>
                     {" "}or call{" "}
-                    <a href="tel:+923037550673" className="text-[#6139DB] hover:underline">
-                      +92 303 7550673
+                    <a href="tel:+923036543005" className="text-[#6139DB] hover:underline">
+                      +92 303 6543005
                     </a>
                   </p>
                 </div>

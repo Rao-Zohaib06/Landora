@@ -278,19 +278,17 @@ export default function TermsOfServicePage() {
                     <p>
                       <strong className="text-[#111111]">Company:</strong> Landora - Real Estate Management System
                     </p>
-                    <p>
-                      <strong className="text-[#111111]">Developer:</strong> Rao Zohaib
-                    </p>
+                  
                     <p>
                       <strong className="text-[#111111]">Email:</strong>{" "}
-                      <a href="mailto:raozohaibofficial06@gmail.com" className="text-[#6139DB] hover:underline">
-                        raozohaibofficial06@gmail.com
+                      <a href="mailto:landoraoffical@gmail.com" className="text-[#6139DB] hover:underline">
+                        landoraoffical@gmail.com
                       </a>
                     </p>
                     <p>
                       <strong className="text-[#111111]">Phone:</strong>{" "}
-                      <a href="tel:+923037550673" className="text-[#6139DB] hover:underline">
-                        +92 303 7550673
+                      <a href="tel:+923036543005" className="text-[#6139DB] hover:underline">
+                        +92 303 6543005
                       </a>
                     </p>
                     <p>
