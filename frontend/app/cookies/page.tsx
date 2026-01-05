@@ -273,8 +273,8 @@ export default function CookiePolicyPage() {
                   <div className="bg-[#6139DB]/5 border-l-4 border-[#6139DB] p-4 rounded mt-6">
                     <p className="text-sm text-[#3A3C40]">
                       <strong className="text-[#111111]">Need Help?</strong> If you have questions about managing your cookie preferences, please contact us at{" "}
-                      <a href="mailto:raozohaibofficial06@gmail.com" className="text-[#6139DB] hover:underline">
-                        raozohaibofficial06@gmail.com
+                      <a href="mailto:landoraoffical@gmail.com" className="text-[#6139DB] hover:underline">
+                        landoraoffical@gmail.com
                       </a>
                     </p>
                   </div>
@@ -328,7 +328,7 @@ export default function CookiePolicyPage() {
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20"
                 asChild
               >
-                <a href="mailto:raozohaibofficial06@gmail.com">Contact Us</a>
+                <a href="mailto:landoraoffical@gmail.com">Contact Us</a>
               </Button>
             </div>
           </AnimatedSection>

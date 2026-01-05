@@ -312,6 +312,6 @@ MIT License - feel free to use this project for learning and personal purposes.
 
 ---
 
-**© 2024-2025 Landora. Developed by Rao Zohaib. All rights reserved.**
+**© 2024-2025 Landora. Developed by Rao Zohaib,Ihtisham. All rights reserved.**
 
 *Zameen ka Har Raaz, Landora Ke Pass* 🏡

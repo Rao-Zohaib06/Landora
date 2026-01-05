@@ -213,11 +213,11 @@ export default function AboutPage() {
                       Email Me
                     </a>
                     <a
-                      href="tel:+923037550673"
+                      href="tel:+923037543005"
                       className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-[#E7EAEF] text-[#111111] rounded-lg hover:border-[#6139DB] hover:text-[#6139DB] transition-colors"
                     >
                       <Phone className="w-4 h-4" />
-                      Call: +92 303 6543005
+                      Call: +92 303 7543005
                     </a>
                   </div>
                 </div>

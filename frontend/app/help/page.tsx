@@ -147,7 +147,7 @@ const quickLinks = [
   {
     icon: Phone,
     title: "Call Us",
-    description: "+92 303 6543005",
+    description: "+92 303 7543005",
     action: "Call Now",
     color: "green"
   },

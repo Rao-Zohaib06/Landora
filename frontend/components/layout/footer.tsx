@@ -59,7 +59,7 @@ export function Footer() {
                 href="tel:+923037543005"
                 className="hover:text-white transition-colors"
               >
-                +92 303 6543005
+                +92 303 7543005
               </a>
             </div>
           </div>

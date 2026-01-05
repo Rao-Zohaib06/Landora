@@ -189,8 +189,8 @@ export default function PrivacyPolicyPage() {
                       landoraoffical@gmail.com
                     </a>
                     {" "}or call{" "}
-                    <a href="tel:+923036543005" className="text-[#6139DB] hover:underline">
-                      +92 303 6543005
+                    <a href="tel:+923037543005" className="text-[#6139DB] hover:underline">
+                      +92 303 7543005
                     </a>
                   </p>
                 </div>

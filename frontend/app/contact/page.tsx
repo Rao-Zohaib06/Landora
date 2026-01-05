@@ -65,7 +65,7 @@ export default function ContactPage() {
     {
       icon: Phone,
       title: "Phone",
-      details: ["+92 303 6543005"],
+      details: ["+92 303 7543005"],
       subtitle: "Mon-Sat 9AM-6PM",
     },
     {
